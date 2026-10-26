@@ -157,7 +157,7 @@ export function OverviewPage() {
                       )}
                     >
                       <span className={cn("size-2 animate-pulse rounded-full", d.servers.unreachable ? "bg-amber-400" : "bg-emerald-400")} />
-                      {d.servers.unreachable ? `${d.servers.unreachable} server unreachable` : "All systems live"}
+                      {d.servers.unreachable ? `${d.servers.unreachable} ${d.servers.unreachable === 1 ? "server" : "servers"} unreachable` : "All systems live"}
                     </span>
                   )}
                   <span className="flex items-center gap-1.5 text-[13px] text-blue-200">
