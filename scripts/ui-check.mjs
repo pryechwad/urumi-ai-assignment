@@ -44,9 +44,9 @@ async function run(label, viewport) {
 
   const pages = [
     ["01-overview", "/", "Overview"],
-    ["02-servers", "/servers", "MCP servers"],
+    ["02-servers", "/servers", "Servers"],
     ["04-tools", "/tools", "Tools"],
-    ["05-chat", "/chat", "Chat agent"],
+    ["05-chat", "/chat", "Chat"],
     ["06-keys", "/keys", "API keys"],
     ["07-team", "/team", "Team"],
     ["08-audit", "/audit", "Audit log"],

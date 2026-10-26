@@ -54,11 +54,7 @@ export function AuditPage() {
     <>
       <PageHeader
         title="Audit log"
-        description={
-          isAdmin
-            ? "Every tool call through the gateway, from MCP clients and the chat agent, with who made it and how it ended."
-            : "Every tool call you made through the gateway, from MCP clients and the chat agent."
-        }
+        description={isAdmin ? "Every tool call through the gateway, by anyone, from any client." : "Every tool call you made, from any client."}
       />
 
       <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))_auto_auto]">

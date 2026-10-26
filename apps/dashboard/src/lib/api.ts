@@ -121,6 +121,7 @@ export interface Overview {
   };
   recentFailures: AuditItem[];
   recentCalls: AuditItem[];
+  hourly: Array<{ hour: string; ok: number; failed: number }>;
 }
 
 export interface TeamMember {

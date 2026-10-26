@@ -1,42 +1,42 @@
 @import "tailwindcss";
-@import "@fontsource-variable/inter";
-@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 
 @theme {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
-  /* Warm neutrals */
-  --color-canvas: #f8f7f4;
+  /* Neutrals (zinc-leaning, not warm) */
+  --color-canvas: #fafafa;
   --color-surface: #ffffff;
-  --color-subtle: #f3f2ee;
-  --color-hover: #efede8;
-  --color-line: #e7e4de;
-  --color-line-strong: #d6d2c9;
-  --color-ink: #1d1c19;
-  --color-ink-2: #4a4843;
-  --color-muted: #6f6b64;
-  --color-faint: #9b978f;
+  --color-subtle: #f4f4f5;
+  --color-hover: #f1f1f2;
+  --color-line: #ebebec;
+  --color-line-strong: #dcdcdf;
+  --color-ink: #0b0b0c;
+  --color-ink-2: #3f3f46;
+  --color-muted: #6b6b74;
+  --color-faint: #a1a1aa;
 
-  /* The one accent: deep green */
-  --color-accent: #1f5f4e;
-  --color-accent-hover: #194e40;
-  --color-accent-soft: #e9f2ee;
-  --color-accent-line: #c6ddd3;
+  /* Interaction accent: links, focus rings, chart highlight. Primary buttons are ink. */
+  --color-accent: #2f5fdc;
+  --color-accent-hover: #244cb6;
+  --color-accent-soft: #eef2fd;
+  --color-accent-line: #cdd8f6;
 
   /* Status */
-  --color-ok: #1d7a4c;
-  --color-ok-soft: #e8f4ec;
-  --color-warn: #96620a;
-  --color-warn-soft: #fbf2df;
-  --color-bad: #b3261e;
-  --color-bad-soft: #fcebe9;
+  --color-ok: #15803d;
+  --color-ok-soft: #ecf7ef;
+  --color-warn: #a35a06;
+  --color-warn-soft: #fdf5e7;
+  --color-bad: #d02b20;
+  --color-bad-soft: #fdeeed;
 
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: 1rem;
 
-  --shadow-pop: 0 1px 2px rgb(29 28 25 / 0.04), 0 8px 24px -6px rgb(29 28 25 / 0.12);
-  --shadow-card: 0 1px 2px rgb(29 28 25 / 0.04);
+  --shadow-pop: 0 0 0 1px rgb(11 11 12 / 0.06), 0 8px 28px -8px rgb(11 11 12 / 0.18);
+  --shadow-card: 0 1px 1px rgb(11 11 12 / 0.03);
 }
 
 @layer base {
@@ -45,8 +45,10 @@
     text-rendering: optimizeLegibility;
   }
   body {
-    @apply bg-canvas text-ink font-sans text-sm;
-    font-feature-settings: "cv11", "ss01";
+    @apply bg-canvas text-ink font-sans;
+    font-size: 13px;
+    line-height: 1.5;
+    font-feature-settings: "ss01", "cv11";
   }
   ::selection {
     background: var(--color-accent-soft);
@@ -59,6 +61,7 @@
   kbd,
   pre {
     @apply font-mono;
+    font-size: 0.95em;
   }
 }
 

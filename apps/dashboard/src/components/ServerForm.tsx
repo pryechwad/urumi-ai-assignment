@@ -92,7 +92,7 @@ export function ServerFormDialog({ open, onOpenChange, server }: { open: boolean
       open={open}
       onOpenChange={onOpenChange}
       title={editing ? `Edit ${server!.name}` : "Add MCP server"}
-      description={editing ? "Changes take effect immediately for everyone." : "The server must speak MCP over Streamable HTTP. The gateway connects and discovers its tools when you save."}
+      description={editing ? "Changes take effect immediately for everyone." : "Streamable HTTP endpoint. The gateway connects and discovers tools when you save."}
       footer={
         <>
           <Button onClick={() => onOpenChange(false)}>Cancel</Button>

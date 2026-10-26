@@ -39,7 +39,7 @@ export function ServerDetailPage() {
   return (
     <>
       <Link to="/servers" className="mb-4 inline-flex items-center gap-1.5 text-[13px] text-muted hover:text-ink">
-        <ArrowLeft className="size-3.5" /> MCP servers
+        <ArrowLeft className="size-3.5" /> Servers
       </Link>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
@@ -77,7 +77,7 @@ export function ServerDetailPage() {
         <Card className="order-2 lg:order-1">
           <CardHeader
             title={`Tools${s ? ` (${s.toolCount})` : ""}`}
-            description={isAdmin ? "Mark write tools as admin-only to hide them from members and reject their calls." : "Names as exposed by the gateway."}
+            description={isAdmin ? "Admin-only tools are hidden from members and rejected if called." : undefined}
           />
           {!q.data ? (
             <div className="space-y-3 p-4">

@@ -52,7 +52,7 @@ function CreateKeyDialog({ open, onOpenChange, presetUserId }: { open: boolean; 
       onOpenChange={onOpenChange}
       size="lg"
       title={created ? "API key created" : "Create API key"}
-      description={created ? undefined : "Keys authenticate MCP clients to the gateway as a specific person. Name it after where it will be used."}
+      description={created ? undefined : "Name it after where it will be used, e.g. “Claude Code on laptop”."}
       footer={
         created ? (
           <Button variant="primary" onClick={() => onOpenChange(false)}>
@@ -146,7 +146,7 @@ export function KeysPage() {
     <>
       <PageHeader
         title="API keys"
-        description="Each key belongs to one person. MCP clients send it to the gateway; it is never forwarded to upstream servers."
+        description="Personal keys for MCP clients. A key is shown once and never forwarded to upstream servers."
         actions={
           <Button variant="primary" onClick={() => setCreateOpen(true)}>
             <Plus /> Create key
@@ -236,7 +236,7 @@ export function KeysPage() {
         </Card>
 
         <Card className="h-fit min-w-0">
-          <CardHeader title="Gateway endpoint" description="Every enabled server's tools, behind one URL." />
+          <CardHeader title="Connect a client" />
           <div className="space-y-4 p-4">
             {meta.data ? <CodeLine value={meta.data.mcpUrl} /> : <Skeleton className="h-9" />}
             {meta.data && <ClientConfig url={meta.data.mcpUrl} />}

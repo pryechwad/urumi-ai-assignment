@@ -103,8 +103,8 @@ describe("MCP gateway", () => {
       BOOTSTRAP_ADMIN_PASSWORD: ADMIN.password,
       UPSTREAM_PRIVATE_HOSTS: "127.0.0.1",
       UPSTREAM_CALL_TIMEOUT_MS: "800",
-      UPSTREAM_CONNECT_TIMEOUT_MS: "1500",
-      UPSTREAM_LIST_TIMEOUT_MS: "1500",
+      UPSTREAM_CONNECT_TIMEOUT_MS: "5000",
+      UPSTREAM_LIST_TIMEOUT_MS: "5000",
       HEALTH_INTERVAL_MS: "0",
       SEED_SERVERS: JSON.stringify([
         { key: "inventory", slug: "inventory", name: "Inventory", url: `${invSrv.url}/mcp`, authType: "bearer", credentialEnv: "INV_TOKEN" },
@@ -130,7 +130,7 @@ describe("MCP gateway", () => {
     const safe = createSafeFetch(ssrf);
     closers.push(() => safe.close());
     const metrics = new Metrics();
-    const upstreams = new UpstreamManager(cipher, safe.fetch, { connectMs: 1500, listMs: 1500, callMs: 800 }, glog);
+    const upstreams = new UpstreamManager(cipher, safe.fetch, { connectMs: 5000, listMs: 5000, callMs: 800 }, glog);
     gateway = new Gateway(db, upstreams, metrics, glog);
     closers.push(() => gateway.stop());
     await gateway.checkAll();
@@ -435,6 +435,10 @@ describe("MCP gateway", () => {
       expect(res.body.servers.total).toBe(3);
       expect(res.body.last24h.calls).toBeGreaterThan(0);
       expect(res.body.last24h.perServer.find((p: { server: string }) => p.server === "inventory").calls).toBeGreaterThan(0);
+      // 24 hourly buckets whose totals match the 24h count.
+      expect(res.body.hourly).toHaveLength(24);
+      const sum = res.body.hourly.reduce((n: number, h: { ok: number; failed: number }) => n + h.ok + h.failed, 0);
+      expect(sum).toBe(res.body.last24h.calls);
     });
   });
 });

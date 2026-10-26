@@ -42,12 +42,7 @@ export function ToolsPage() {
     <>
       <PageHeader
         title="Tools"
-        description={
-          <>
-            Every tool from enabled servers, exactly as MCP clients and the chat agent see them{isAdmin ? "" : " with your role"}. Names are{" "}
-            <code className="text-[12.5px] text-ink">{"<server>__<tool>"}</code>, so two servers can both expose a tool called <code className="text-[12.5px] text-ink">search</code>.
-          </>
-        }
+        description={<>What MCP clients and the chat agent see{isAdmin ? "" : " with your role"}. Same-named tools stay distinct as <code className="text-ink-2">server__tool</code>.</>}
       />
       {q.isError && <ErrorState error={q.error} onRetry={() => q.refetch()} />}
 

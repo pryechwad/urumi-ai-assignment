@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { Wordmark } from "@/components/Shell";
+import { Logo } from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 import { FormField, Input } from "@/components/ui/form";
 import { api } from "@/lib/api";
@@ -17,14 +17,16 @@ const schema = z.object({
 
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle?: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-4 py-10">
-      <Wordmark className="mb-8" />
-      <div className="w-full max-w-sm rounded-xl border border-line bg-surface p-6 shadow-card">
-        <h1 className="text-base font-semibold text-ink">{title}</h1>
-        {subtitle && <p className="mt-1 text-[13px] text-muted">{subtitle}</p>}
-        <div className="mt-5">{children}</div>
+    <div className="flex min-h-dvh flex-col bg-surface">
+      <div className="flex flex-1 items-center justify-center px-4 py-12">
+        <div className="w-full max-w-[340px]">
+          <Logo className="mb-6 size-7" />
+          <h1 className="text-[19px] font-semibold tracking-[-0.015em] text-ink">{title}</h1>
+          {subtitle && <p className="mt-1 text-[13px] text-muted">{subtitle}</p>}
+          <div className="mt-6">{children}</div>
+        </div>
       </div>
-      <p className="mt-6 max-w-sm text-center text-[12px] text-faint">One MCP endpoint for your team's tools. Access is per person and every call is audited.</p>
+      <footer className="px-6 py-4 text-[12px] text-faint">Urumi MCP Gateway</footer>
     </div>
   );
 }
@@ -51,7 +53,7 @@ export function LoginPage() {
   });
 
   return (
-    <AuthLayout title="Sign in" subtitle="Use the account your administrator created for you.">
+    <AuthLayout title="Sign in to Urumi" subtitle="Use the account your administrator invited you to.">
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <FormField label="Email" htmlFor="email" error={form.formState.errors.email?.message}>
           <Input id="email" type="email" autoComplete="email" autoFocus aria-invalid={!!form.formState.errors.email} {...form.register("email")} />

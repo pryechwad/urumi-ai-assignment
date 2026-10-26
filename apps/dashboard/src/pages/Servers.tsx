@@ -26,8 +26,8 @@ export function ServersPage() {
   return (
     <>
       <PageHeader
-        title="MCP servers"
-        description="Upstream servers the gateway connects to. Their tools are exposed through the gateway's single endpoint as <slug>__<tool>."
+        title="Servers"
+        description={<>Upstream MCP servers. Their tools are exposed as <code className="text-ink-2">slug__tool</code>.</>}
         actions={
           isAdmin && (
             <Button

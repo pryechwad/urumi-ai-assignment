@@ -110,7 +110,7 @@ function RichText({ text }: { text: string }) {
   }
   flush();
   flushTable();
-  return <div className="text-[14px] leading-relaxed text-ink">{blocks}</div>;
+  return <div className="text-[13.5px] leading-relaxed text-ink">{blocks}</div>;
 }
 
 function StepRow({ step }: { step: ChatStep }) {
@@ -185,12 +185,8 @@ export function ChatPage() {
   return (
     <div className="flex min-h-[calc(100dvh-7rem)] flex-col lg:min-h-[calc(100dvh-4.5rem)]">
       <PageHeader
-        title="Chat agent"
-        description={
-          <>
-            Answers using the gateway's tools, acting as <span className="font-medium text-ink">{user?.email}</span>. Its calls follow your permissions and appear in the audit log under your name.
-          </>
-        }
+        title="Chat"
+        description={<>Uses the gateway's tools as <span className="text-ink">{user?.email}</span>, with your permissions. Calls are audited under your name.</>}
         actions={
           <>
             {meta.data?.chat.model && <span className="text-[12px] text-faint">{meta.data.chat.model}</span>}
@@ -228,7 +224,7 @@ export function ChatPage() {
                 <p className="mt-1 text-[13px] text-muted">The agent picks tools from every enabled server and shows each call it makes.</p>
                 <div className="mt-5 grid w-full gap-2">
                   {SUGGESTIONS.map((s) => (
-                    <button key={s} onClick={() => submit(s)} className="rounded-lg border border-line bg-surface px-3 py-2 text-left text-[13px] text-ink-2 hover:border-line-strong hover:bg-subtle">
+                    <button key={s} onClick={() => submit(s)} className="rounded-md border border-line bg-surface px-3 py-2 text-left text-[13px] text-ink-2 hover:border-line-strong hover:text-ink">
                       {s}
                     </button>
                   ))}
@@ -239,7 +235,7 @@ export function ChatPage() {
                 {turns.map((t, i) =>
                   t.role === "user" ? (
                     <div key={i} className="flex justify-end">
-                      <div className="max-w-[85%] rounded-xl rounded-br-sm bg-accent px-3.5 py-2 text-[14px] whitespace-pre-wrap text-white">{t.content}</div>
+                      <div className="max-w-[85%] rounded-lg rounded-br-sm bg-ink px-3 py-2 text-[13.5px] whitespace-pre-wrap text-white">{t.content}</div>
                     </div>
                   ) : (
                     <div key={i} className="space-y-2.5">
@@ -281,7 +277,7 @@ export function ChatPage() {
               submit(input);
             }}
           >
-            <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-lg border border-line-strong bg-surface p-1.5 shadow-card focus-within:border-accent focus-within:ring-3 focus-within:ring-accent/12">
+            <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-lg border border-line-strong bg-surface p-1.5 focus-within:border-accent focus-within:ring-3 focus-within:ring-accent/15">
               <textarea
                 ref={inputRef}
                 value={input}

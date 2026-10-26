@@ -116,7 +116,7 @@ export function TeamPage() {
     <>
       <PageHeader
         title="Team"
-        description="Admins manage servers, members and keys. Members use tools through the gateway and the chat agent."
+        description="Admins manage servers, people and keys. Members use tools."
         actions={
           <Button variant="primary" onClick={() => setInviteOpen(true)}>
             <UserPlus /> Invite member

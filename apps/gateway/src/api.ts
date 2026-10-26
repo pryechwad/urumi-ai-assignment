@@ -183,7 +183,7 @@ export function apiRouter(deps: ApiDeps) {
     const scoped = req.user!.role !== "admin";
     const filter = scoped ? "AND user_id = $1" : "";
     const params = scoped ? [req.user!.id] : [];
-    const [servers, tools, perServer, totals, failures, recent] = await Promise.all([
+    const [servers, tools, perServer, totals, failures, recent, hourly] = await Promise.all([
       gateway.servers(),
       gateway.listTools(req.user!),
       db.query(
@@ -211,6 +211,16 @@ export function apiRouter(deps: ApiDeps) {
          FROM audit_logs WHERE true ${filter} ORDER BY created_at DESC LIMIT 8`,
         params,
       ),
+      // One row per hour for the last 24 hours, including empty hours, for the activity chart.
+      db.query<{ hour: Date; ok: number; failed: number }>(
+        `SELECT h.hour,
+                count(a.id) FILTER (WHERE a.outcome = 'success')::int AS ok,
+                count(a.id) FILTER (WHERE a.outcome <> 'success')::int AS failed
+         FROM generate_series(date_trunc('hour', now()) - interval '23 hours', date_trunc('hour', now()), interval '1 hour') AS h(hour)
+         LEFT JOIN audit_logs a ON date_trunc('hour', a.created_at) = h.hour ${scoped ? "AND a.user_id = $1" : ""}
+         GROUP BY h.hour ORDER BY h.hour`,
+        params,
+      ),
     ]);
     const count = (st: string) => servers.filter((s) => (s.enabled ? s.status : "disabled") === st).length;
     res.json({
@@ -227,6 +237,7 @@ export function apiRouter(deps: ApiDeps) {
       last24h: { ...totals.rows[0], perServer: perServer.rows },
       recentFailures: failures.rows,
       recentCalls: recent.rows,
+      hourly: hourly.rows,
     });
   });
 
