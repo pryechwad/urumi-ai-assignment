@@ -1,0 +1,27 @@
+{
+  "name": "@urumi/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "node ../../scripts/bundle.mjs src/index.ts dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.1.0",
+    "pg": "^8.16.0",
+    "undici": "^7.16.0",
+    "zod": "^4.3.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.0",
+    "@types/cookie-parser": "^1.4.9",
+    "@types/pg": "^8.15.0",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.0"
+  }
+}

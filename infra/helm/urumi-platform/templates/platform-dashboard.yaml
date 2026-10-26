@@ -1,0 +1,99 @@
+{{- $d := .Values.dashboard -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+  namespace: {{ include "ns.platform" . }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  selector:
+    app.kubernetes.io/name: dashboard
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard
+  namespace: {{ include "ns.platform" . }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  replicas: {{ $d.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dashboard
+  template:
+    metadata:
+      labels:
+        {{- include "urumi.labels" . | nindent 8 }}
+        app.kubernetes.io/name: dashboard
+        app.kubernetes.io/component: dashboard
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101 # nginx-unprivileged
+        runAsGroup: 101
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: nginx
+          image: {{ include "urumi.ownImage" (list . $d.image) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 20
+          resources: {{- toYaml $d.resources | nindent 12 }}
+          {{- include "urumi.containerSecurity" . | nindent 10 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# One public host: the dashboard at /, its REST API at /api and the MCP endpoint at /mcp.
+# Upstream MCP servers, Postgres and /metrics have no Ingress route.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app
+  namespace: {{ include "ns.platform" . }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.ingress.annotations }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- if and .Values.ingress.tls.enabled .Values.ingress.tls.clusterIssuer }}
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.tls.clusterIssuer }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts: [{{ .Values.hosts.app | quote }}]
+      secretName: app-tls
+  {{- end }}
+  rules:
+    - host: {{ .Values.hosts.app | quote }}
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service: { name: gateway, port: { name: http } }
+          # Prefix, not Exact: Traefik ranks routes by rule length, and Path(`/mcp`) is shorter
+          # than the dashboard's PathPrefix(`/`), so an Exact rule would lose to the catch-all.
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service: { name: gateway, port: { name: http } }
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: dashboard, port: { name: http } }

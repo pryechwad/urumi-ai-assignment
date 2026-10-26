@@ -1,0 +1,18 @@
+{{- if .Values.namespaces.create }}
+{{- range $role, $ns := dict "store" .Values.namespaces.store "mcp" .Values.namespaces.mcp "platform" .Values.namespaces.platform }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ $ns }}
+  labels:
+    {{- include "urumi.labels" $ | nindent 4 }}
+    urumi.dev/role: {{ $role }}
+    # Baseline Pod Security: blocks privileged pods, host namespaces and host paths.
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+  annotations:
+    # Keep the namespace (and its PVCs) if the release is uninstalled by mistake.
+    helm.sh/resource-policy: keep
+{{- end }}
+{{- end }}

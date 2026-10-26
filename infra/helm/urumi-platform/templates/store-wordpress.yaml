@@ -1,0 +1,137 @@
+{{- $v := .Values.store.wordpress -}}
+{{- $home := include "urumi.publicUrl" (list . .Values.hosts.store) -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wordpress-data
+  namespace: {{ include "ns.store" . }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+  annotations:
+    # Store content outlives `helm uninstall`; delete the PVC explicitly to wipe it.
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- include "urumi.storageClass" (list $v.persistence.storageClass .) | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ $v.persistence.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+  namespace: {{ include "ns.store" . }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  selector:
+    app.kubernetes.io/name: wordpress
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  namespace: {{ include "ns.store" . }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  # The content volume is ReadWriteOnce, so the old pod must stop before the new one mounts it.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wordpress
+  template:
+    metadata:
+      labels:
+        {{- include "urumi.labels" . | nindent 8 }}
+        app.kubernetes.io/name: wordpress
+        app.kubernetes.io/component: store
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum | trunc 16 }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 33 # www-data, so Apache can write uploads to the volume
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: wordpress
+          image: {{ include "urumi.image" $v.image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: mariadb:3306
+            - name: WORDPRESS_DB_NAME
+              value: wordpress
+            - name: WORDPRESS_DB_USER
+              value: wordpress
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: store-db, key: MARIADB_PASSWORD } }
+            # Pin the public URL so links, redirects and WooCommerce's OAuth base URL are stable
+            # no matter which hostname a request arrived on.
+            - name: WORDPRESS_CONFIG_EXTRA
+              value: |
+                define('WP_HOME', '{{ $home }}');
+                define('WP_SITEURL', '{{ $home }}');
+                define('WP_MEMORY_LIMIT', '256M');
+                define('DISALLOW_FILE_EDIT', true);
+                define('AUTOMATIC_UPDATER_DISABLED', true);
+          ports:
+            - name: http
+              containerPort: 80
+          startupProbe:
+            tcpSocket: { port: http }
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            # 2xx/3xx both pass: before setup finishes WordPress redirects to its installer.
+            httpGet: { path: /wp-login.php, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket: { port: http }
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources: {{- toYaml $v.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: content
+              mountPath: /var/www/html
+      volumes:
+        - name: content
+          persistentVolumeClaim:
+            claimName: wordpress-data
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: storefront
+  namespace: {{ include "ns.store" . }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.ingress.annotations }}{{ toYaml . | nindent 4 }}{{- end }}
+    {{- if and .Values.ingress.tls.enabled .Values.ingress.tls.clusterIssuer }}
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.tls.clusterIssuer }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts: [{{ .Values.hosts.store | quote }}]
+      secretName: storefront-tls
+  {{- end }}
+  rules:
+    - host: {{ .Values.hosts.store | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: wordpress
+                port: { name: http }

@@ -1,0 +1,26 @@
+# Local Kubernetes (k3d). Install with:
+#   helm upgrade --install urumi infra/helm/urumi-platform -f infra/helm/urumi-platform/values-local.yaml
+#
+# *.localtest.me is public DNS that resolves to 127.0.0.1, so no hosts-file edits are needed.
+# k3d maps host port 8088 to Traefik's port 80 (see scripts/local-up.sh).
+
+global:
+  imagePullPolicy: Never # images are imported with `k3d image import`
+
+ingress:
+  className: traefik
+  publicPort: "8088"
+
+hosts:
+  store: store.localtest.me
+  app: app.localtest.me
+
+store:
+  adminEmail: admin@store.localtest.me
+
+gateway:
+  replicas: 1
+  cookieSecure: false
+  bootstrapAdmin:
+    email: admin@urumi.local
+    name: Ada Admin

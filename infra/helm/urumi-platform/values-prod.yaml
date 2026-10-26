@@ -1,0 +1,57 @@
+# Production-like single-node k3s on a VPS. Same chart, different values:
+#   helm upgrade --install urumi infra/helm/urumi-platform \
+#     -f infra/helm/urumi-platform/values-prod.yaml \
+#     -f values-secrets.prod.yaml        # untracked: llmApiKey etc.
+#
+# Replace the example domain, registry and e-mail with your own.
+
+global:
+  imageRegistry: ghcr.io/your-github-user
+  imagePullPolicy: IfNotPresent
+  storageClass: local-path # k3s default; use your provider's block-storage class if available
+
+ingress:
+  className: traefik # bundled with k3s
+  publicPort: ""
+  tls:
+    enabled: true
+    clusterIssuer: letsencrypt-prod # created once; see docs/deployment.md
+
+hosts:
+  store: store.example.com
+  app: mcp.example.com
+
+store:
+  adminEmail: ops@example.com
+  wordpress:
+    persistence:
+      size: 10Gi
+    resources:
+      requests: { cpu: 200m, memory: 256Mi }
+      limits: { cpu: "2", memory: 768Mi }
+  mariadb:
+    persistence:
+      size: 10Gi
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits: { cpu: "1", memory: 768Mi }
+
+gateway:
+  # Stateless MCP endpoint + Postgres-backed state, so replicas scale horizontally.
+  replicas: 2
+  cookieSecure: true
+  bootstrapAdmin:
+    email: ops@example.com
+    name: Platform Admin
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { cpu: "1", memory: 384Mi }
+  postgres:
+    persistence:
+      size: 5Gi
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: "1", memory: 512Mi }
+
+dashboard:
+  replicas: 2

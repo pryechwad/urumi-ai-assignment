@@ -1,0 +1,151 @@
+{{- $g := .Values.gateway -}}
+{{- $mcpNs := include "ns.mcp" . -}}
+{{- $appUrl := include "urumi.publicUrl" (list . .Values.hosts.app) -}}
+{{- $seed := list
+  (dict "key" "woocommerce" "slug" "woocommerce" "name" "WooCommerce"
+        "description" "Products and orders of the WooCommerce store."
+        "url" (printf "http://woo-mcp.%s.svc.cluster.local:3101/mcp" $mcpNs)
+        "authType" "bearer" "credentialEnv" "SEED_WOO_TOKEN"
+        "adminOnlyTools" (default (list) $g.seedAdminOnlyTools.woocommerce))
+  (dict "key" "inventory" "slug" "inventory" "name" "Inventory"
+        "description" "Warehouse stock levels by SKU."
+        "url" (printf "http://inventory-mcp.%s.svc.cluster.local:3102/mcp" $mcpNs)
+        "authType" "bearer" "credentialEnv" "SEED_INVENTORY_TOKEN"
+        "adminOnlyTools" (default (list) $g.seedAdminOnlyTools.inventory))
+  (dict "key" "support" "slug" "support" "name" "Support"
+        "description" "Customer support tickets."
+        "url" (printf "http://support-mcp.%s.svc.cluster.local:3103/mcp" $mcpNs)
+        "authType" "bearer" "credentialEnv" "SEED_SUPPORT_TOKEN"
+        "adminOnlyTools" (default (list) $g.seedAdminOnlyTools.support))
+-}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway
+  namespace: {{ include "ns.platform" . }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+data:
+  PORT: "8080"
+  PUBLIC_URL: {{ $appUrl | quote }}
+  COOKIE_SECURE: {{ $g.cookieSecure | quote }}
+  BOOTSTRAP_ADMIN_EMAIL: {{ $g.bootstrapAdmin.email | quote }}
+  BOOTSTRAP_ADMIN_NAME: {{ $g.bootstrapAdmin.name | quote }}
+  # Only hostnames in the MCP namespace may resolve to private (cluster) addresses.
+  UPSTREAM_PRIVATE_HOSTS: {{ printf "*.%s.svc.cluster.local,*.%s.svc" $mcpNs $mcpNs | quote }}
+  UPSTREAM_CONNECT_TIMEOUT_MS: {{ $g.timeouts.connectMs | quote }}
+  UPSTREAM_LIST_TIMEOUT_MS: {{ $g.timeouts.listMs | quote }}
+  UPSTREAM_CALL_TIMEOUT_MS: {{ $g.timeouts.callMs | quote }}
+  HEALTH_INTERVAL_MS: {{ $g.healthIntervalMs | quote }}
+  RATE_LIMIT_MCP_PER_MIN: {{ $g.rateLimits.mcpPerMinute | quote }}
+  RATE_LIMIT_CHAT_PER_MIN: {{ $g.rateLimits.chatPerMinute | quote }}
+  LLM_PROVIDER: {{ $g.llm.provider | quote }}
+  LLM_BASE_URL: {{ $g.llm.baseUrl | quote }}
+  LLM_MODEL: {{ $g.llm.model | quote }}
+  CHAT_MAX_STEPS: {{ $g.llm.maxSteps | quote }}
+  STORE_TIMEZONE: {{ .Values.store.timezone | quote }}
+  # URLs only. Each credential is referenced by env var name and comes from the Secret.
+  SEED_SERVERS: {{ toJson $seed | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: {{ include "ns.platform" . }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  selector:
+    app.kubernetes.io/name: gateway
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: {{ include "ns.platform" . }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  replicas: {{ $g.replicas }}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gateway
+  template:
+    metadata:
+      labels:
+        {{- include "urumi.labels" . | nindent 8 }}
+        app.kubernetes.io/name: gateway
+        app.kubernetes.io/component: gateway
+      annotations:
+        # Roll the pods whenever any gateway setting changes (ConfigMap edits alone don't restart pods).
+        checksum/config: {{ list $seed $g .Values.store.timezone .Values.hosts .Values.ingress | toJson | sha256sum | trunc 16 }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum | trunc 16 }}
+    spec:
+      # The gateway never talks to the Kubernetes API, so it gets no token at all.
+      automountServiceAccountToken: false
+      {{- include "urumi.podSecurity" . | nindent 6 }}
+      terminationGracePeriodSeconds: 20
+      {{- if gt (int $g.replicas) 1 }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: { matchLabels: { app.kubernetes.io/name: gateway } }
+      {{- end }}
+      containers:
+        - name: gateway
+          image: {{ include "urumi.ownImage" (list . $g.image) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef: { name: gateway }
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: gateway, key: DATABASE_URL } }
+            - name: CREDENTIALS_KEY
+              valueFrom: { secretKeyRef: { name: gateway, key: CREDENTIALS_KEY } }
+            - name: BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom: { secretKeyRef: { name: gateway, key: BOOTSTRAP_ADMIN_PASSWORD } }
+            - name: SEED_WOO_TOKEN
+              valueFrom: { secretKeyRef: { name: gateway, key: SEED_WOO_TOKEN } }
+            - name: SEED_INVENTORY_TOKEN
+              valueFrom: { secretKeyRef: { name: gateway, key: SEED_INVENTORY_TOKEN } }
+            - name: SEED_SUPPORT_TOKEN
+              valueFrom: { secretKeyRef: { name: gateway, key: SEED_SUPPORT_TOKEN } }
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "gateway" .Values.secrets.llmExistingSecret }}
+                  key: LLM_API_KEY
+                  optional: true # without it the chat agent is disabled; everything else works
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 4
+          startupProbe:
+            # Allows time for migrations while Postgres starts on first install (up to 5 min).
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          resources: {{- toYaml $g.resources | nindent 12 }}
+          {{- include "urumi.containerSecurity" . | nindent 10 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

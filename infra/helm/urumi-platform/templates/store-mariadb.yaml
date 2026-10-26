@@ -1,0 +1,109 @@
+{{- $v := .Values.store.mariadb -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+  namespace: {{ include "ns.store" . }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  # Headless + ClusterIP-less: only reachable inside the cluster, and NetworkPolicy
+  # restricts it further to WordPress and the setup Job.
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: mariadb
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: mysql
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mariadb
+  namespace: {{ include "ns.store" . }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  serviceName: mariadb
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mariadb
+  template:
+    metadata:
+      labels:
+        {{- include "urumi.labels" . | nindent 8 }}
+        app.kubernetes.io/name: mariadb
+        app.kubernetes.io/component: store-database
+      annotations:
+        checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum | trunc 16 }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: mariadb
+          image: {{ include "urumi.image" $v.image }}
+          imagePullPolicy: IfNotPresent
+          args:
+            # Small footprint: this database backs one demo store.
+            - --innodb-buffer-pool-size=64M
+            - --performance-schema=OFF
+            - --max-connections=60
+            - --skip-name-resolve
+          env:
+            - name: MARIADB_DATABASE
+              value: wordpress
+            - name: MARIADB_USER
+              value: wordpress
+            - name: MARIADB_PASSWORD
+              valueFrom: { secretKeyRef: { name: store-db, key: MARIADB_PASSWORD } }
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom: { secretKeyRef: { name: store-db, key: MARIADB_ROOT_PASSWORD } }
+          ports:
+            - name: mysql
+              containerPort: 3306
+          # First boot initialises the data directory, which can take minutes on a small machine.
+          startupProbe:
+            tcpSocket: { port: mysql }
+            periodSeconds: 5
+            failureThreshold: 60
+          # Probes log in as the application user, so they work on any data directory state.
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", 'mariadb -uwordpress -p"$MARIADB_PASSWORD" -e "SELECT 1" wordpress >/dev/null']
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", 'mariadb-admin -uwordpress -p"$MARIADB_PASSWORD" ping >/dev/null']
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources: {{- toYaml $v.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: run
+              mountPath: /run/mysqld
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- include "urumi.storageClass" (list $v.persistence.storageClass .) | nindent 8 }}
+        resources:
+          requests:
+            storage: {{ $v.persistence.size }}

@@ -1,0 +1,18 @@
+{
+  "name": "@urumi/support-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "node ../../scripts/bundle.mjs src/index.ts dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@urumi/mcp-kit": "0.1.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "express": "^5.1.0",
+    "zod": "^4.3.0"
+  }
+}

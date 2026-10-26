@@ -1,0 +1,27 @@
+{
+  "name": "urumi-mcp-gateway",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Team MCP gateway on Kubernetes with a WooCommerce store as its first data source",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0",
+    "playwright-core": "^1.56.1",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

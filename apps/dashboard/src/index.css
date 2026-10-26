@@ -1,0 +1,79 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* Warm neutrals */
+  --color-canvas: #f8f7f4;
+  --color-surface: #ffffff;
+  --color-subtle: #f3f2ee;
+  --color-hover: #efede8;
+  --color-line: #e7e4de;
+  --color-line-strong: #d6d2c9;
+  --color-ink: #1d1c19;
+  --color-ink-2: #4a4843;
+  --color-muted: #6f6b64;
+  --color-faint: #9b978f;
+
+  /* The one accent: deep green */
+  --color-accent: #1f5f4e;
+  --color-accent-hover: #194e40;
+  --color-accent-soft: #e9f2ee;
+  --color-accent-line: #c6ddd3;
+
+  /* Status */
+  --color-ok: #1d7a4c;
+  --color-ok-soft: #e8f4ec;
+  --color-warn: #96620a;
+  --color-warn-soft: #fbf2df;
+  --color-bad: #b3261e;
+  --color-bad-soft: #fcebe9;
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  --shadow-pop: 0 1px 2px rgb(29 28 25 / 0.04), 0 8px 24px -6px rgb(29 28 25 / 0.12);
+  --shadow-card: 0 1px 2px rgb(29 28 25 / 0.04);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans text-sm;
+    font-feature-settings: "cv11", "ss01";
+  }
+  ::selection {
+    background: var(--color-accent-soft);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  code,
+  kbd,
+  pre {
+    @apply font-mono;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.985);
+  }
+}

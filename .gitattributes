@@ -1,0 +1,4 @@
+# Keep LF everywhere: shell scripts, Helm templates and Dockerfiles run on Linux.
+* text=auto eol=lf
+*.png binary
+*.woff2 binary

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+coverage/
+.data/
+infra/helm/**/charts/*.tgz
+values-secrets*.yaml
+test-results/
+playwright-report/

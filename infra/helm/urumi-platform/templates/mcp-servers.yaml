@@ -1,0 +1,14 @@
+{{- $storeHome := include "urumi.publicUrl" (list . .Values.hosts.store) -}}
+{{- $wooEnv := list
+  (dict "name" "WOO_BASE_URL" "value" (printf "http://wordpress.%s.svc.cluster.local" (include "ns.store" .)))
+  (dict "name" "WOO_HOME_URL" "value" $storeHome)
+  (dict "name" "STORE_TIMEZONE" "value" .Values.store.timezone)
+  (dict "name" "WOO_TIMEOUT_MS" "value" (toString .Values.mcp.woo.timeoutMs))
+  (dict "name" "WOO_CONSUMER_KEY" "valueFrom" (dict "secretKeyRef" (dict "name" "woo-mcp" "key" "WOO_CONSUMER_KEY")))
+  (dict "name" "WOO_CONSUMER_SECRET" "valueFrom" (dict "secretKeyRef" (dict "name" "woo-mcp" "key" "WOO_CONSUMER_SECRET")))
+-}}
+{{ include "urumi.mcpService" (dict "root" . "name" "woo-mcp" "port" 3101 "cfg" .Values.mcp.woo "env" $wooEnv) }}
+---
+{{ include "urumi.mcpService" (dict "root" . "name" "inventory-mcp" "port" 3102 "cfg" .Values.mcp.inventory) }}
+---
+{{ include "urumi.mcpService" (dict "root" . "name" "support-mcp" "port" 3103 "cfg" .Values.mcp.support) }}

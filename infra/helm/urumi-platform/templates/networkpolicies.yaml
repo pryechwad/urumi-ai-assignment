@@ -1,0 +1,197 @@
+{{- if .Values.networkPolicies.enabled }}
+{{- $store := include "ns.store" . -}}
+{{- $mcp := include "ns.mcp" . -}}
+{{- $platform := include "ns.platform" . -}}
+{{- $ic := .Values.networkPolicies.ingressController -}}
+{{- /* Every namespace starts closed: no ingress, no egress. Then each flow is allowed explicitly. */ -}}
+{{- range $ns := list $store $mcp $platform }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: {{ $ns }}
+  labels: {{- include "urumi.labels" $ | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: {{ $ns }}
+  labels: {{- include "urumi.labels" $ | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+{{- end }}
+
+# ------------------------------------------------------------------ store namespace
+---
+# MariaDB: only WordPress and the setup Job may connect.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mariadb
+  namespace: {{ $store }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: mariadb } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: wordpress } }
+        - podSelector: { matchLabels: { app.kubernetes.io/name: store-setup } }
+      ports: [{ protocol: TCP, port: 3306 }]
+---
+# WordPress: public traffic via the ingress controller, and the WooCommerce MCP server.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: wordpress
+  namespace: {{ $store }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: wordpress } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ $ic.namespace }} } }
+          podSelector: { matchLabels: {{ toJson $ic.podLabels }} }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ $mcp }} } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: woo-mcp } }
+      ports: [{ protocol: TCP, port: 80 }]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: mariadb } }
+      ports: [{ protocol: TCP, port: 3306 }]
+    # Plugin/theme updates and WooCommerce admin feeds; never cluster or metadata addresses.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 100.64.0.0/10]
+      ports: [{ protocol: TCP, port: 443 }, { protocol: TCP, port: 80 }]
+---
+# Store setup Job: database plus wordpress.org downloads.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: store-setup
+  namespace: {{ $store }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: store-setup } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: mariadb } }
+      ports: [{ protocol: TCP, port: 3306 }]
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 100.64.0.0/10]
+      ports: [{ protocol: TCP, port: 443 }, { protocol: TCP, port: 80 }]
+
+# ------------------------------------------------------------------ MCP namespace
+---
+# Upstream MCP servers accept connections from gateway pods only. Nothing else in the
+# cluster (including the store, the dashboard or other tenants) can reach them.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mcp-from-gateway-only
+  namespace: {{ $mcp }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/component: mcp-upstream } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ $platform }} } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: gateway } }
+---
+# The WooCommerce MCP server may call WordPress and nothing else (no database, no internet).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: woo-mcp-egress
+  namespace: {{ $mcp }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: woo-mcp } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ $store }} } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: wordpress } }
+      ports: [{ protocol: TCP, port: 80 }]
+
+# ------------------------------------------------------------------ platform namespace
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres
+  namespace: {{ $platform }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: postgres } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: gateway } }
+      ports: [{ protocol: TCP, port: 5432 }]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dashboard
+  namespace: {{ $platform }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: dashboard } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ $ic.namespace }} } }
+          podSelector: { matchLabels: {{ toJson $ic.podLabels }} }
+      ports: [{ protocol: TCP, port: 8080 }]
+---
+# Gateway: public traffic in; out to Postgres, the in-cluster MCP servers, and public
+# internet (externally hosted MCP servers, the LLM API). Private ranges stay blocked at the
+# network layer as a second line behind the gateway's own SSRF checks.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateway
+  namespace: {{ $platform }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: gateway } }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ $ic.namespace }} } }
+          podSelector: { matchLabels: {{ toJson $ic.podLabels }} }
+      ports: [{ protocol: TCP, port: 8080 }]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: postgres } }
+      ports: [{ protocol: TCP, port: 5432 }]
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ $mcp }} } }
+          podSelector: { matchLabels: { app.kubernetes.io/component: mcp-upstream } }
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 169.254.0.0/16, 100.64.0.0/10]
+      ports: [{ protocol: TCP, port: 443 }, { protocol: TCP, port: 80 }]
+{{- end }}

@@ -1,0 +1,176 @@
+# Defaults shared by every environment. Override per environment with
+#   values-local.yaml  (k3d on a laptop)
+#   values-prod.yaml   (k3s on a VPS)
+# Secrets are never committed: they are generated on first install and reused on upgrade,
+# or supplied at install time (see `secrets` below and docs/deployment.md).
+
+global:
+  # Registry prefix for the platform's own images, e.g. "ghcr.io/acme". Empty = local images.
+  imageRegistry: ""
+  imagePullPolicy: IfNotPresent
+  # Default StorageClass for every PVC. Empty = the cluster default (k3s: local-path).
+  storageClass: ""
+
+namespaces:
+  # Set false if the namespaces are created out of band (e.g. by a platform team).
+  create: true
+  store: urumi-store
+  mcp: urumi-mcp
+  platform: urumi-platform
+
+ingress:
+  className: traefik
+  # Port in public URLs when the ingress is not on 80/443 (local k3d maps 8080 -> 80).
+  publicPort: ""
+  annotations: {}
+  tls:
+    enabled: false
+    # With cert-manager installed, set the ClusterIssuer and certificates are requested automatically.
+    clusterIssuer: ""
+
+hosts:
+  store: store.example.com
+  app: app.example.com
+
+networkPolicies:
+  enabled: true
+  # Where the ingress controller pods run, so only they may reach public workloads.
+  ingressController:
+    namespace: kube-system
+    podLabels:
+      app.kubernetes.io/name: traefik
+
+# ---------------------------------------------------------------- secrets
+# Leave empty to generate. Values given here (or via --set / an untracked values file) win.
+secrets:
+  llmApiKey: ""
+  # Use an existing Secret in the platform namespace instead, with key LLM_API_KEY.
+  llmExistingSecret: ""
+  bootstrapAdminPassword: ""
+  storeAdminPassword: ""
+  wooConsumerKey: ""
+  wooConsumerSecret: ""
+
+# ---------------------------------------------------------------- store (WordPress + WooCommerce)
+store:
+  title: Urumi Demo Store
+  timezone: Asia/Kolkata
+  currency: INR
+  country: "IN:MH"
+  adminUser: storeadmin
+  adminEmail: admin@example.com
+  wordpress:
+    image:
+      repository: wordpress
+      tag: 6.8-php8.3-apache
+    resources:
+      requests: { cpu: 100m, memory: 192Mi }
+      limits: { cpu: "1", memory: 512Mi }
+    persistence:
+      size: 2Gi
+      storageClass: ""
+  mariadb:
+    image:
+      repository: mariadb
+      tag: "11.4"
+    resources:
+      requests: { cpu: 50m, memory: 160Mi }
+      limits: { cpu: 500m, memory: 384Mi }
+    persistence:
+      size: 2Gi
+      storageClass: ""
+  setup:
+    image:
+      repository: wordpress
+      tag: cli-2.12-php8.3
+    # Pinned for reproducible installs. Must support the WordPress image above:
+    # WooCommerce 10.6.x is the newest line that supports WordPress 6.8 (11.x needs WP 7.0).
+    woocommerceVersion: "10.6.2"
+    installStorefrontTheme: true
+    seedProducts: true
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: "1", memory: 384Mi }
+
+# ---------------------------------------------------------------- upstream MCP servers
+mcp:
+  woo:
+    image:
+      repository: urumi/woo-mcp
+      tag: 0.1.0
+    timeoutMs: 10000
+    resources:
+      requests: { cpu: 10m, memory: 48Mi }
+      limits: { cpu: 250m, memory: 160Mi }
+  inventory:
+    image:
+      repository: urumi/inventory-mcp
+      tag: 0.1.0
+    persistence:
+      size: 64Mi
+      storageClass: ""
+    resources:
+      requests: { cpu: 10m, memory: 48Mi }
+      limits: { cpu: 250m, memory: 160Mi }
+  support:
+    image:
+      repository: urumi/support-mcp
+      tag: 0.1.0
+    persistence:
+      size: 64Mi
+      storageClass: ""
+    resources:
+      requests: { cpu: 10m, memory: 48Mi }
+      limits: { cpu: 250m, memory: 160Mi }
+
+# ---------------------------------------------------------------- gateway + dashboard
+gateway:
+  image:
+    repository: urumi/gateway
+    tag: 0.1.0
+  replicas: 1
+  bootstrapAdmin:
+    email: admin@example.com
+    name: Platform Admin
+  cookieSecure: false
+  timeouts:
+    connectMs: 5000
+    listMs: 5000
+    callMs: 30000
+  healthIntervalMs: 10000
+  rateLimits:
+    mcpPerMinute: 120
+    chatPerMinute: 20
+  llm:
+    # "openai" = any OpenAI-compatible API (Groq, OpenAI, OpenRouter, Ollama); or "anthropic".
+    provider: openai
+    baseUrl: https://api.groq.com/openai/v1
+    model: openai/gpt-oss-120b
+    maxSteps: 8
+  # Seeded on first start; tools listed here are admin-only (members cannot see or call them).
+  seedAdminOnlyTools:
+    woocommerce: [create_product, update_order_status]
+    inventory: [adjust_stock]
+    support: [update_ticket_status]
+  resources:
+    requests: { cpu: 25m, memory: 80Mi }
+    limits: { cpu: 500m, memory: 256Mi }
+  postgres:
+    image:
+      repository: postgres
+      tag: 17-alpine
+    resources:
+      requests: { cpu: 25m, memory: 48Mi }
+      limits: { cpu: 500m, memory: 256Mi }
+    persistence:
+      size: 1Gi
+      storageClass: ""
+
+dashboard:
+  image:
+    repository: urumi/dashboard
+    tag: 0.1.0
+  replicas: 1
+  resources:
+    requests: { cpu: 5m, memory: 16Mi }
+    limits: { cpu: 100m, memory: 64Mi }
