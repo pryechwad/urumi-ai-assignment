@@ -11,6 +11,7 @@ import { LoginPage } from "./pages/Login";
 import { OverviewPage } from "./pages/Overview";
 import { ServerDetailPage } from "./pages/ServerDetail";
 import { ServersPage } from "./pages/Servers";
+import { StoresPage } from "./pages/Stores";
 import { TeamPage } from "./pages/Team";
 import { ToolsPage } from "./pages/Tools";
 
@@ -47,6 +48,7 @@ export function App() {
       >
         <Route index element={<OverviewPage />} />
         <Route path="chat" element={<ChatPage />} />
+        <Route path="stores" element={<StoresPage />} />
         <Route path="servers" element={<ServersPage />} />
         <Route path="servers/:id" element={<ServerDetailPage />} />
         <Route path="tools" element={<ToolsPage />} />

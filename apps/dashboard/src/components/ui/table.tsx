@@ -10,17 +10,17 @@ export function Table({ children, className }: { children: ReactNode; className?
 }
 
 export function THead({ children }: { children: ReactNode }) {
-  return <thead className="border-b border-line">{children}</thead>;
+  return <thead className="border-b border-line bg-slate-50/80">{children}</thead>;
 }
 
 export function Th({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th className={cn("h-9 px-4 text-[12px] font-normal whitespace-nowrap text-muted", className)} {...props} />;
+  return <th className={cn("h-11 px-5 text-[11px] font-semibold tracking-wider whitespace-nowrap text-slate-500 uppercase", className)} {...props} />;
 }
 
 export function Tr({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn("border-b border-line last:border-0", props.onClick && "cursor-pointer hover:bg-canvas", className)} {...props} />;
+  return <tr className={cn("border-b border-line last:border-0", props.onClick ? "cursor-pointer hover:bg-blue-50/40" : "hover:bg-slate-50/60", className)} {...props} />;
 }
 
 export function Td({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("h-11 px-4 align-middle text-ink", className)} {...props} />;
+  return <td className={cn("h-14 px-5 align-middle text-ink", className)} {...props} />;
 }

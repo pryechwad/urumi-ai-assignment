@@ -1,0 +1,238 @@
+{
+  "hero": {
+    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/RayBan_sunglasses_%28Unsplash%29.jpg/1920px-RayBan_sunglasses_%28Unsplash%29.jpg",
+    "credit": {
+      "title": "RayBan sunglasses (Unsplash).jpg",
+      "author": "Ethan Robertson ethanrobertson",
+      "license": "CC0",
+      "source": "https://commons.wikimedia.org/wiki/File:RayBan_sunglasses_(Unsplash).jpg"
+    }
+  },
+  "products": [
+    {
+      "sku": "URU-TEE-001",
+      "name": "Graphic Cotton Tee – Olive",
+      "category": "Apparel",
+      "price": "599",
+      "sale_price": "499",
+      "description": "Soft 180 GSM combed cotton with a bold front print.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/Ambigram_Ideal%2C_polysymmetrical_logo_printed_on_a_green_T-shirt.jpg/960px-Ambigram_Ideal%2C_polysymmetrical_logo_printed_on_a_green_T-shirt.jpg",
+      "credit": {
+        "title": "Ambigram Ideal, polysymmetrical logo printed on a green T-shirt.jpg",
+        "author": "Basile Morin",
+        "license": "CC BY-SA 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Ambigram_Ideal,_polysymmetrical_logo_printed_on_a_green_T-shirt.jpg"
+      }
+    },
+    {
+      "sku": "URU-TEE-002",
+      "name": "Electric Print Sports Tee",
+      "category": "Apparel",
+      "price": "799",
+      "sale_price": "",
+      "description": "Quick-dry performance tee with an all-over electric print.",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/0/09/Sports_T-Shirt.png",
+      "credit": {
+        "title": "Sports T-Shirt.png",
+        "author": "Kuttos2",
+        "license": "CC0",
+        "source": "https://commons.wikimedia.org/wiki/File:Sports_T-Shirt.png"
+      }
+    },
+    {
+      "sku": "URU-CAP-003",
+      "name": "Plaid Baseball Cap",
+      "category": "Apparel",
+      "price": "699",
+      "sale_price": "",
+      "description": "Six-panel cotton cap with an adjustable strap.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b4/Madras_plaid_baseball_cap_by_Polo_Ralph_Lauren.jpg/960px-Madras_plaid_baseball_cap_by_Polo_Ralph_Lauren.jpg",
+      "credit": {
+        "title": "Madras plaid baseball cap by Polo Ralph Lauren.jpg",
+        "author": "Menswear Market",
+        "license": "CC BY 2.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Madras_plaid_baseball_cap_by_Polo_Ralph_Lauren.jpg"
+      }
+    },
+    {
+      "sku": "URU-MUG-004",
+      "name": "Blue Ceramic Mug",
+      "category": "Home & Kitchen",
+      "price": "349",
+      "sale_price": "299",
+      "description": "350 ml glazed stoneware mug, microwave safe.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/87/Mug.jpg/960px-Mug.jpg",
+      "credit": {
+        "title": "Mug.jpg",
+        "author": "Filo gèn'",
+        "license": "CC BY-SA 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Mug.jpg"
+      }
+    },
+    {
+      "sku": "URU-BAG-005",
+      "name": "Navy Canvas Tote",
+      "category": "Bags",
+      "price": "899",
+      "sale_price": "749",
+      "description": "Heavy canvas tote with leather handles and an inner pocket.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/Upcycled_Tote_Bag_%2828748428697%29.jpg/960px-Upcycled_Tote_Bag_%2828748428697%29.jpg",
+      "credit": {
+        "title": "Upcycled Tote Bag (28748428697).jpg",
+        "author": "Delta News Hub",
+        "license": "CC BY 2.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Upcycled_Tote_Bag_(28748428697).jpg"
+      }
+    },
+    {
+      "sku": "URU-BPK-006",
+      "name": "Trail Backpack 40L",
+      "category": "Bags",
+      "price": "3499",
+      "sale_price": "",
+      "description": "Water-resistant trekking pack with a padded back panel.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/07/Backpack_%28AM_2014.66.1-10%29.jpg/960px-Backpack_%28AM_2014.66.1-10%29.jpg",
+      "credit": {
+        "title": "Backpack (AM 2014.66.1-10).jpg",
+        "author": "Alexto Production",
+        "license": "CC BY 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Backpack_(AM_2014.66.1-10).jpg"
+      }
+    },
+    {
+      "sku": "URU-BAG-007",
+      "name": "Utility Gear Bag",
+      "category": "Bags",
+      "price": "2499",
+      "sale_price": "",
+      "description": "Structured tool and gear bag with 20+ organiser pockets.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/80/Backpack_Klein_Tools.jpg/960px-Backpack_Klein_Tools.jpg",
+      "credit": {
+        "title": "Backpack Klein Tools.jpg",
+        "author": "Klein Tools",
+        "license": "CC BY-SA 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Backpack_Klein_Tools.jpg"
+      }
+    },
+    {
+      "sku": "URU-WAL-008",
+      "name": "Leather Bifold Wallet",
+      "category": "Accessories",
+      "price": "1299",
+      "sale_price": "",
+      "description": "Full-grain leather bifold with six card slots.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c4/A_men%27s_wallet.jpg/960px-A_men%27s_wallet.jpg",
+      "credit": {
+        "title": "A men's wallet.jpg",
+        "author": "Pixloom",
+        "license": "CC BY-SA 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:A_men%27s_wallet.jpg"
+      }
+    },
+    {
+      "sku": "URU-WAL-009",
+      "name": "Slim Card Wallet",
+      "category": "Accessories",
+      "price": "799",
+      "sale_price": "",
+      "description": "Minimal card holder that fits a front pocket.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/Flap_Boy_Slim_Wallet_from_JAIMIE_JACOBS_03.jpg/960px-Flap_Boy_Slim_Wallet_from_JAIMIE_JACOBS_03.jpg",
+      "credit": {
+        "title": "Flap Boy Slim Wallet from JAIMIE JACOBS 03.jpg",
+        "author": "www.kartenetui.info",
+        "license": "CC BY 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Flap_Boy_Slim_Wallet_from_JAIMIE_JACOBS_03.jpg"
+      }
+    },
+    {
+      "sku": "URU-SUN-010",
+      "name": "Aviator Sunglasses",
+      "category": "Accessories",
+      "price": "1899",
+      "sale_price": "1499",
+      "description": "UV400 polarised lenses in a lightweight frame.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2b/Ombraz_Limited_Edition_Dolomite_Black_Ice.jpg/960px-Ombraz_Limited_Edition_Dolomite_Black_Ice.jpg",
+      "credit": {
+        "title": "Ombraz Limited Edition Dolomite Black Ice.jpg",
+        "author": "Jensen Brehm",
+        "license": "CC BY-SA 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Ombraz_Limited_Edition_Dolomite_Black_Ice.jpg"
+      }
+    },
+    {
+      "sku": "URU-SUN-011",
+      "name": "Rimless Gradient Sunglasses",
+      "category": "Accessories",
+      "price": "1599",
+      "sale_price": "",
+      "description": "Rimless frame with gradient rose-tinted lenses.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6a/Women%27s_sunglasses_VERSACE_Violet_Gradient_%28Creative_Commons%29.jpg/960px-Women%27s_sunglasses_VERSACE_Violet_Gradient_%28Creative_Commons%29.jpg",
+      "credit": {
+        "title": "Women's sunglasses VERSACE Violet Gradient (Creative Commons).jpg",
+        "author": "Ossa Kolo",
+        "license": "CC BY 2.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Women%27s_sunglasses_VERSACE_Violet_Gradient_(Creative_Commons).jpg"
+      }
+    },
+    {
+      "sku": "URU-WAT-012",
+      "name": "Chronograph Steel Watch",
+      "category": "Watches",
+      "price": "6999",
+      "sale_price": "5999",
+      "description": "Stainless steel chronograph, 100 m water resistant.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fd/Fossil_wristwatch_with_white_background.jpg/960px-Fossil_wristwatch_with_white_background.jpg",
+      "credit": {
+        "title": "Fossil wristwatch with white background.jpg",
+        "author": "Cvmontuy",
+        "license": "CC BY-SA 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Fossil_wristwatch_with_white_background.jpg"
+      }
+    },
+    {
+      "sku": "URU-WAT-013",
+      "name": "Minimal White Watch",
+      "category": "Watches",
+      "price": "3299",
+      "sale_price": "",
+      "description": "Clean white dial on a brushed steel bracelet.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/dd/Wristwatch_Prologue.jpg/960px-Wristwatch_Prologue.jpg",
+      "credit": {
+        "title": "Wristwatch Prologue.jpg",
+        "author": "Anton Ehrola",
+        "license": "CC BY-SA 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:Wristwatch_Prologue.jpg"
+      }
+    },
+    {
+      "sku": "URU-AUD-014",
+      "name": "Studio Headphones",
+      "category": "Audio",
+      "price": "4499",
+      "sale_price": "3999",
+      "description": "Open-back over-ear headphones tuned for detail.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/2023_S%C5%82uchawki_Sennheiser_HD_540.jpg/960px-2023_S%C5%82uchawki_Sennheiser_HD_540.jpg",
+      "credit": {
+        "title": "2023 Słuchawki Sennheiser HD 540.jpg",
+        "author": "Jacek Halicki",
+        "license": "CC BY-SA 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:2023_S%C5%82uchawki_Sennheiser_HD_540.jpg"
+      }
+    },
+    {
+      "sku": "URU-AUD-015",
+      "name": "Wireless Neckband Earphones",
+      "category": "Audio",
+      "price": "1499",
+      "sale_price": "",
+      "description": "Bluetooth 5.3 neckband with 20-hour battery.",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/2023_S%C5%82uchawki_Sony_WI-XB400_%283%29.jpg/960px-2023_S%C5%82uchawki_Sony_WI-XB400_%283%29.jpg",
+      "credit": {
+        "title": "2023 Słuchawki Sony WI-XB400 (3).jpg",
+        "author": "Jacek Halicki",
+        "license": "CC BY-SA 4.0",
+        "source": "https://commons.wikimedia.org/wiki/File:2023_S%C5%82uchawki_Sony_WI-XB400_(3).jpg"
+      }
+    }
+  ]
+}

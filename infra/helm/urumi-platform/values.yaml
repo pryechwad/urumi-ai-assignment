@@ -166,6 +166,19 @@ gateway:
       size: 1Gi
       storageClass: ""
 
+# ---------------------------------------------------------------- multi-store (bonus)
+stores:
+  enabled: true
+  # New stores get <slug>.<domain> as their storefront host.
+  domain: example.com
+  maxPerUser: 2
+  # Provisioning deadline; a store that is not ready by then is marked Failed with the reason.
+  timeoutMinutes: 25
+  provisioner:
+    resources:
+      requests: { cpu: 10m, memory: 64Mi }
+      limits: { cpu: 250m, memory: 192Mi }
+
 dashboard:
   image:
     repository: urumi/dashboard

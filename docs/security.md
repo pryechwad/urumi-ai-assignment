@@ -107,6 +107,27 @@ Every namespace starts with a `default-deny` policy for ingress and egress, plus
 
 **Intended versus actually enforced.** NetworkPolicies are enforced only if the CNI implements them. k3s and k3d enforce them with the embedded kube-router controller, and docs/testing.md shows how to verify a blocked connection. Kind before 0.24 or other CNIs without policy support would accept the objects but ignore them. In that case the per-server bearer tokens are what still keep the MCP servers gateway-only.
 
+## Multi-store: Kubernetes API access and store isolation
+
+- **Who can touch the Kubernetes API.** Only `store-provisioner`. It has its own ServiceAccount, bound to the ClusterRole `urumi-store-provisioner`:
+  - exactly the resource types a store is made of
+  - no wildcards, no `pods/exec`, no `roles`/`rolebindings`
+  - Secrets `create`/`patch` only, never read
+
+  The gateway, which faces the internet, has `automountServiceAccountToken: false`. A compromised gateway therefore cannot create workloads. It can only insert `stores` rows, subject to the same validation and limits as the API.
+- **Namespaces are cluster-scoped.** RBAC cannot limit them to a name prefix, so the code adds a second check: the provisioner only creates `store-<slug>` namespaces carrying its `managed-by` label, and refuses to delete any namespace without that label. A test covers this.
+- **Per-store secrets.** Database passwords, WooCommerce keys and the MCP token are derived from the master key and the store's UUID. A deleted and re-created store with the same name gets entirely new credentials.
+- **Cross-store isolation.** Every store namespace is deny-all by default:
+  - a store's `woo-mcp` accepts connections only from gateway pods, and can only reach `wordpress` **in its own namespace**
+  - MariaDB accepts only its own WordPress and setup Job
+
+  docs/testing.md shows a live check that store A's MCP server cannot reach store B.
+- **Abuse limits.**
+  - `stores.maxPerUser` stores per person
+  - a ResourceQuota and LimitRange per namespace, so one store cannot starve the node
+  - a provisioning deadline, so a stuck store fails and frees its slot when deleted
+- **Who can manage a store.** Any signed-in user may create stores. Only the store's owner or an admin can retry or delete it, and members can't see other people's stores' credentials, because there are none to see.
+
 ## Containers
 
 - Our images are `node:24-alpine` plus one bundled file, run as UID 1000, non-root, with `readOnlyRootFilesystem`, all capabilities dropped, no privilege escalation and the `RuntimeDefault` seccomp profile.

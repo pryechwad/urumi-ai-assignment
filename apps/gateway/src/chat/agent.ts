@@ -8,6 +8,8 @@ import { NAME_SEPARATOR, type Caller, type Gateway } from "../gateway.ts";
 import { LlmError, type AgentMessage, type LlmProvider, type LlmTool } from "./llm.ts";
 
 const MAX_TOOL_RESULT_CHARS = 12_000;
+// Short descriptions keep each model request small (free tiers limit tokens per minute).
+const MAX_DESCRIPTION_CHARS = 240;
 const SEARCH_TOOLS = "search_tools";
 const CALL_TOOL = "call_tool";
 
@@ -33,10 +35,41 @@ function resultText(result: CallToolResult): string {
   return text.length > MAX_TOOL_RESULT_CHARS ? text.slice(0, MAX_TOOL_RESULT_CHARS) + "\n…[truncated]" : text;
 }
 
-/** JSON Schema as LLM providers accept it (no $schema, always an object). */
+// Tool results go to the model as compact JSON: same data, far fewer tokens than pretty-printed.
+const MAX_MODEL_RESULT_CHARS = 6_000;
+function compactForModel(text: string): string {
+  let out = text;
+  try {
+    out = JSON.stringify(JSON.parse(text));
+  } catch {
+    /* not JSON: send as is */
+  }
+  return out.length > MAX_MODEL_RESULT_CHARS ? out.slice(0, MAX_MODEL_RESULT_CHARS) + "…[truncated]" : out;
+}
+
+// Keys of a JSON Schema the model actually needs to call a tool correctly.
+const KEEP = new Set(["type", "properties", "required", "enum", "items", "anyOf"]);
+
+/** Compact JSON Schema for the model: structure, types, enums and required fields; short descriptions only. */
+function compactSchema(schema: unknown): unknown {
+  if (Array.isArray(schema)) return schema.map(compactSchema);
+  if (!schema || typeof schema !== "object") return schema;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(schema as Record<string, unknown>)) {
+    if (k === "properties" && v && typeof v === "object") {
+      out.properties = Object.fromEntries(Object.entries(v as Record<string, unknown>).map(([name, prop]) => [name, compactSchema(prop)]));
+    } else if (KEEP.has(k)) {
+      out[k] = compactSchema(v);
+    } else if (k === "description" && typeof v === "string" && v.length <= 80) {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+/** JSON Schema as LLM providers accept it (always an object), compacted to save tokens. */
 function parametersOf(tool: Tool): Record<string, unknown> {
-  const { $schema: _ignored, ...rest } = (tool.inputSchema ?? { type: "object" }) as Record<string, unknown>;
-  return { type: "object", properties: {}, ...rest };
+  return { type: "object", properties: {}, ...(compactSchema(tool.inputSchema ?? { type: "object" }) as Record<string, unknown>) };
 }
 
 function systemPrompt(timeZone: string, toolMode: "direct" | "search") {
@@ -76,7 +109,7 @@ export class ChatAgent {
 
     const llmTools: LlmTool[] =
       toolMode === "direct"
-        ? tools.map((t) => ({ name: t.name, description: (t.description ?? "").slice(0, 1024), parameters: parametersOf(t) }))
+        ? tools.map((t) => ({ name: t.name, description: (t.description ?? "").slice(0, MAX_DESCRIPTION_CHARS), parameters: parametersOf(t) }))
         : [
             {
               name: SEARCH_TOOLS,
@@ -96,7 +129,8 @@ export class ChatAgent {
 
     const messages: AgentMessage[] = history.map((m) => ({ role: m.role, content: m.content }));
     const steps: ToolStep[] = [];
-    const deadline = AbortSignal.timeout(this.opts.timeoutMs * 2);
+    // Whole-conversation budget; generous because rate-limited providers may ask us to wait.
+    const deadline = AbortSignal.timeout(this.opts.timeoutMs * 4);
     const system = systemPrompt(this.opts.timeZone, toolMode);
 
     for (let step = 0; step < this.opts.maxSteps; step++) {
@@ -137,7 +171,7 @@ export class ChatAgent {
           durationMs: Math.round(performance.now() - started),
           preview: text.slice(0, 2000),
         });
-        messages.push({ role: "tool", toolCallId: call.id, name, content: text, isError: Boolean(result.isError) });
+        messages.push({ role: "tool", toolCallId: call.id, name, content: compactForModel(text), isError: Boolean(result.isError) });
       }
     }
     return {

@@ -148,6 +148,7 @@ spec:
   ingress:
     - from:
         - podSelector: { matchLabels: { app.kubernetes.io/name: gateway } }
+        - podSelector: { matchLabels: { app.kubernetes.io/name: store-provisioner } }
       ports: [{ protocol: TCP, port: 5432 }]
 ---
 apiVersion: networking.k8s.io/v1
@@ -189,6 +190,10 @@ spec:
     - to:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ $mcp }} } }
           podSelector: { matchLabels: { app.kubernetes.io/component: mcp-upstream } }
+        # MCP servers of provisioned stores (each in its own store-<slug> namespace).
+        - namespaceSelector: { matchLabels: { urumi.dev/store-namespace: "true" } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: woo-mcp } }
+      ports: [{ protocol: TCP, port: 3101 }, { protocol: TCP, port: 3102 }, { protocol: TCP, port: 3103 }]
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0

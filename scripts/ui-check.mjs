@@ -13,7 +13,7 @@ import { chromium } from "playwright-core";
 
 const APP = process.env.APP_URL ?? "http://app.localtest.me:8088";
 const OUT = process.argv[2] ?? "ui-screenshots";
-const EMAIL = process.env.ADMIN_EMAIL ?? "admin@urumi.local";
+const EMAIL = process.env.ADMIN_EMAIL ?? "pryechwad@gmail.com";
 const PASSWORD =
   process.env.ADMIN_PASSWORD ??
   Buffer.from(
@@ -43,10 +43,11 @@ async function run(label, viewport) {
   await page.waitForURL(`${APP}/`);
 
   const pages = [
-    ["01-overview", "/", "Overview"],
+    ["01-overview", "/", /^Welcome back/],
     ["02-servers", "/servers", "Servers"],
     ["04-tools", "/tools", "Tools"],
     ["05-chat", "/chat", "Chat"],
+    ["10-stores", "/stores", "Stores"],
     ["06-keys", "/keys", "API keys"],
     ["07-team", "/team", "Team"],
     ["08-audit", "/audit", "Audit log"],

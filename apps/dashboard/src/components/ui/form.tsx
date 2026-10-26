@@ -3,12 +3,12 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/format";
 
 const control =
-  "w-full rounded-md border border-line-strong bg-surface px-2.5 text-[13px] text-ink placeholder:text-faint transition-colors " +
-  "hover:border-faint focus:border-accent focus:outline-none focus:ring-3 focus:ring-accent/15 disabled:bg-subtle disabled:text-muted " +
+  "w-full rounded-xl border border-line-strong bg-surface px-3 text-[14px] text-ink placeholder:text-faint transition-colors " +
+  "hover:border-faint focus:border-accent focus:outline-none focus:ring-3 focus:ring-blue-500/20 disabled:bg-subtle disabled:text-muted " +
   "aria-[invalid=true]:border-bad aria-[invalid=true]:focus:ring-bad/12";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) {
-  return <input ref={ref} className={cn(control, "h-7.5", className)} {...props} />;
+  return <input ref={ref} className={cn(control, "h-10", className)} {...props} />;
 });
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea({ className, ...props }, ref) {
@@ -18,10 +18,10 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(function Select({ className, children, ...props }, ref) {
   return (
     <div className={cn("relative", className)}>
-      <select ref={ref} className={cn(control, "h-7.5 appearance-none pr-7")} {...props}>
+      <select ref={ref} className={cn(control, "h-10 appearance-none pr-8")} {...props}>
         {children}
       </select>
-      <ChevronDown className="pointer-events-none absolute top-1/2 right-2 size-3.5 -translate-y-1/2 text-muted" />
+      <ChevronDown className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted" />
     </div>
   );
 });
@@ -43,7 +43,7 @@ export function FormField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="flex items-baseline gap-1.5 text-[12.5px] font-medium text-ink">
+      <label htmlFor={htmlFor} className="flex items-baseline gap-1.5 text-[13px] font-semibold text-ink-2">
         {label}
         {optional && <span className="text-2xs font-normal text-faint">Optional</span>}
       </label>

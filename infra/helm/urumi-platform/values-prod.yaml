@@ -53,5 +53,9 @@ gateway:
       requests: { cpu: 50m, memory: 128Mi }
       limits: { cpu: "1", memory: 512Mi }
 
+stores:
+  domain: shops.example.com # wildcard DNS *.shops.example.com -> VPS; TLS per store via cert-manager
+  maxPerUser: 3
+
 dashboard:
   replicas: 2

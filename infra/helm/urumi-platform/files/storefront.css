@@ -1,0 +1,64 @@
+/* Urumi storefront polish on top of the Storefront theme. Loaded as the site's Additional CSS. */
+body { background: #f8fafc; }
+
+/* Store notice bar */
+.woocommerce-store-notice, p.demo_store {
+  background: linear-gradient(90deg, #ea580c, #db2777);
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+/* Header */
+.site-header { border-bottom: 0; box-shadow: 0 6px 24px -12px rgba(15, 23, 42, .5); }
+.site-branding .site-title a { font-weight: 800; letter-spacing: -.02em; }
+.site-branding .site-description { color: #a5b4fc; }
+.main-navigation ul.menu > li > a, .main-navigation ul.nav-menu > li > a { font-weight: 600; }
+.site-header-cart .cart-contents .count { background: #ea580c; color: #fff; border-radius: 999px; padding: 0 .5em; }
+
+/* Homepage hero */
+.page-template-template-homepage .entry-header { display: none; }
+.page-template-template-homepage .type-page { padding-top: 0; }
+.urumi-hero { border-radius: 24px; overflow: hidden; margin: 1.5em 0 3em; }
+.urumi-hero .wp-block-cover__background { background: linear-gradient(90deg, rgba(30, 27, 75, .85), rgba(30, 27, 75, .25)) !important; opacity: 1 !important; }
+.urumi-hero .wp-block-cover__inner-container { max-width: 560px; padding: 2em 3em; }
+.urumi-eyebrow { display: inline-block; background: #ea580c; color: #fff; border-radius: 999px; padding: .2em .9em; font-size: .85em; font-weight: 700; }
+.urumi-hero-title { color: #fff !important; font-size: 3.2em; font-weight: 800; letter-spacing: -.02em; margin: .3em 0 .2em; }
+.urumi-hero-text { color: #e0e7ff; font-size: 1.1em; }
+.urumi-hero .wp-block-button__link { background: #fff; color: #1e1b4b; font-weight: 700; border-radius: 999px; padding: .8em 1.8em; }
+
+/* Section titles */
+.storefront-product-section .section-title { font-weight: 800; letter-spacing: -.02em; color: #111827; }
+
+/* Product cards */
+ul.products li.product {
+  background: #fff;
+  border-radius: 18px;
+  padding: 14px 14px 18px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .06), 0 10px 30px -18px rgba(15, 23, 42, .35);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+ul.products li.product:hover { transform: translateY(-4px); box-shadow: 0 1px 3px rgba(15, 23, 42, .06), 0 18px 40px -16px rgba(79, 70, 229, .45); }
+ul.products li.product img { border-radius: 12px; background: #fff; aspect-ratio: 1 / 1; object-fit: contain; }
+ul.products li.product .woocommerce-loop-product__title { font-weight: 700; color: #111827; }
+ul.products li.product .price { color: #4f46e5; font-weight: 800; }
+ul.products li.product .price del { color: #94a3b8; font-weight: 500; }
+ul.products li.product .button { border-radius: 999px; padding: .6em 1.3em; }
+.onsale { background: #ea580c; color: #fff; border: 0; border-radius: 999px; padding: .25em .8em; font-weight: 700; }
+
+/* Category tiles */
+ul.products li.product-category img { aspect-ratio: 1 / 1; object-fit: contain; }
+ul.products li.product-category h2 { font-weight: 800; }
+ul.products li.product-category mark { background: #eef2ff; color: #4f46e5; border-radius: 999px; padding: 0 .5em; }
+
+/* Single product */
+.single-product div.product .woocommerce-product-gallery img { border-radius: 18px; background: #fff; }
+.single-product div.product p.price { color: #4f46e5; font-weight: 800; }
+.single_add_to_cart_button { border-radius: 999px !important; }
+
+/* Footer */
+.site-footer { padding-top: 3em; }
+.site-footer .widget-title { color: #fff; font-weight: 700; }
+
+/* Storefront's "Shop by Brand" section has nothing to show (no brands in this catalog). */
+.storefront-woocommerce-brands,
+.storefront-product-section:not(:has(ul.products)):not(:has(.product-category)) { display: none; }

@@ -235,7 +235,7 @@ export function ChatPage() {
                 {turns.map((t, i) =>
                   t.role === "user" ? (
                     <div key={i} className="flex justify-end">
-                      <div className="max-w-[85%] rounded-lg rounded-br-sm bg-ink px-3 py-2 text-[13.5px] whitespace-pre-wrap text-white">{t.content}</div>
+                      <div className="max-w-[85%] rounded-2xl rounded-br-md bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-[14px] whitespace-pre-wrap text-white shadow-md shadow-blue-600/20">{t.content}</div>
                     </div>
                   ) : (
                     <div key={i} className="space-y-2.5">

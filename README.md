@@ -49,7 +49,7 @@ That creates a k3d cluster (k3s with Traefik on host port 8088), builds and impo
 |---|---|
 | Storefront | http://store.localtest.me:8088 |
 | Store admin (wp-admin) | http://store.localtest.me:8088/wp-admin, user `storeadmin` |
-| Dashboard | http://app.localtest.me:8088, user `admin@urumi.local` |
+| Dashboard | http://app.localtest.me:8088, user `pryechwad@gmail.com` |
 | MCP endpoint | http://app.localtest.me:8088/mcp |
 
 `*.localtest.me` resolves to 127.0.0.1 through public DNS, so no hosts-file edits are needed. Get the generated passwords with:
@@ -78,7 +78,7 @@ Upgrades reuse them. The only secret you supply is the LLM key, through `LLM_API
 
 ### Place an order on the storefront
 
-1. Open http://store.localtest.me:8088 and choose a product (six are seeded), then **Add to cart**.
+1. Open http://store.localtest.me:8088 and choose a product (15 are seeded across 6 categories, with photos), then **Add to cart**.
 2. Open the cart, then **Proceed to checkout**. Shipping is disabled for the demo, so only billing details are needed.
 3. Choose **Cash on delivery** and **Place order**.
 4. The order appears in **wp-admin → WooCommerce → Orders**.
@@ -130,6 +130,16 @@ Tools appear as `<server>__<tool>`, for example `woocommerce__list_orders`, `inv
 - Saved credentials are encrypted and never shown again.
 - URLs are checked against an SSRF policy: no metadata or link-local addresses, and private addresses only for allowlisted in-cluster hosts.
 
+### Create more stores (multi-store)
+
+On **Stores → Create store**, enter a name, for example "Mumbai". Within about 3–5 minutes:
+
+- A new namespace `store-mumbai` gets its own MariaDB, WordPress + WooCommerce (the same catalog and look), Ingress host `http://mumbai.localtest.me:8088` and its own WooCommerce MCP server.
+- That MCP server is registered in the gateway automatically, with tools named `mumbai__list_orders`, `mumbai__create_product`, and so on. The live step is shown on the store card while it is provisioning.
+- In chat you can then ask: *"Compare today's orders across the main WooCommerce store and the Mumbai store."*
+
+**Delete** removes the store's tools immediately, then its namespace, volumes, Secrets and Ingress. Each person can have up to 2 stores (`stores.maxPerUser`).
+
 ### Team, keys and audit
 
 - **Team** (admins only): invite people with a single-use link, change roles, disable accounts (which kills their sessions and keys), and issue keys on someone's behalf.
@@ -175,7 +185,7 @@ The gateway rolls with zero unavailable replicas, migrations are additive and lo
 
 ```bash
 npm install
-npm test                       # 38 automated tests across all workspaces; no Docker needed
+npm test                       # 53 automated tests across all workspaces; no Docker needed
 npm run build                  # bundles each service with esbuild; builds the dashboard
 ```
 
@@ -183,7 +193,7 @@ To run the dashboard against a local gateway, start Postgres, then:
 
 ```bash
 DATABASE_URL=postgres://... CREDENTIALS_KEY=$(openssl rand -base64 32) \
-  BOOTSTRAP_ADMIN_EMAIL=admin@urumi.local BOOTSTRAP_ADMIN_PASSWORD=change-me-please \
+  BOOTSTRAP_ADMIN_EMAIL=pryechwad@gmail.com BOOTSTRAP_ADMIN_PASSWORD=change-me-please \
   npm run dev -w apps/gateway
 npm run dev -w apps/dashboard  # http://localhost:5173, proxies /api and /mcp to :8080
 ```
@@ -216,4 +226,5 @@ docs                 architecture, security, deployment, testing
 | 8. Observability | Done: Prometheus `/metrics` (calls, errors, latency histogram, upstream up/down); overview with per-server calls, failure rate and p95; precise unreachable reasons | `metrics.ts`, Overview page |
 | 9. Upgrades and rollback | Documented, with zero-downtime gateway rollouts and locked additive migrations | docs/deployment.md |
 | 1. VPS deployment | Chart and values ready and linted; not run on a real VPS here | `values-prod.yaml`, docs/deployment.md |
-| Multi-store provisioning, OAuth, hosted MCP servers | Not attempted | n/a |
+| **Bonus: multi-store provisioning** | Done: create and delete stores from the dashboard; each in its own namespace with its own database, Secrets, PVCs, Ingress host and MCP server, registered automatically (`<store>__list_orders`); NetworkPolicy isolation; ResourceQuota, LimitRange, per-user limit and provisioning timeout; safe retries and restart recovery via a reconcile loop | `apps/gateway/src/stores/`, `templates/platform-provisioner.yaml`, Stores page, docs/architecture.md |
+| OAuth, hosted MCP servers | Not attempted | n/a |

@@ -1,0 +1,194 @@
+{{- if .Values.stores.enabled }}
+{{- $p := .Values.stores -}}
+{{- $platform := include "ns.platform" . -}}
+# ---------------------------------------------------------------------------------------------
+# Multi-store provisioning. The dashboard API records "I want store X" in Postgres; this
+# component reconciles that into a namespace per store via the Kubernetes API. It is the only
+# workload with Kubernetes API access; the internet-facing gateway has none.
+# ---------------------------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: store-config
+  namespace: {{ $platform }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+data:
+  # Read by the gateway (API validation, limits, URLs) and by the provisioner (manifests).
+  STORES_ENABLED: "true"
+  STORE_DOMAIN: {{ $p.domain | quote }}
+  STORE_SCHEME: {{ ternary "https" "http" .Values.ingress.tls.enabled | quote }}
+  STORE_PUBLIC_PORT: {{ .Values.ingress.publicPort | quote }}
+  STORE_INGRESS_CLASS: {{ .Values.ingress.className | quote }}
+  STORE_TLS_CLUSTER_ISSUER: {{ ternary .Values.ingress.tls.clusterIssuer "" .Values.ingress.tls.enabled | quote }}
+  PLATFORM_NAMESPACE: {{ $platform | quote }}
+  INGRESS_CONTROLLER_NAMESPACE: {{ .Values.networkPolicies.ingressController.namespace | quote }}
+  INGRESS_CONTROLLER_LABELS: {{ toJson .Values.networkPolicies.ingressController.podLabels | quote }}
+  STORE_IMAGE_WORDPRESS: {{ include "urumi.image" .Values.store.wordpress.image | quote }}
+  STORE_IMAGE_MARIADB: {{ include "urumi.image" .Values.store.mariadb.image | quote }}
+  STORE_IMAGE_WPCLI: {{ include "urumi.image" .Values.store.setup.image | quote }}
+  STORE_IMAGE_WOO_MCP: {{ include "urumi.ownImage" (list . .Values.mcp.woo.image) | quote }}
+  STORE_OWN_IMAGE_PULL_POLICY: {{ .Values.global.imagePullPolicy | quote }}
+  STORE_WOO_VERSION: {{ .Values.store.setup.woocommerceVersion | quote }}
+  STORE_TIMEZONE: {{ .Values.store.timezone | quote }}
+  STORE_CURRENCY: {{ .Values.store.currency | quote }}
+  STORE_COUNTRY: {{ .Values.store.country | quote }}
+  STORE_STORAGE_CLASS: {{ .Values.global.storageClass | quote }}
+  STORE_PROVISION_TIMEOUT_MS: {{ mul $p.timeoutMinutes 60000 | quote }}
+  STORE_MAX_PER_USER: {{ $p.maxPerUser | quote }}
+  STORE_SCRIPTS_DIR: /etc/urumi/store-setup
+---
+# The same setup files the main store uses; copied into each new store's namespace.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: store-setup-files
+  namespace: {{ $platform }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+data:
+  setup.sh: {{ .Files.Get "files/store-setup.sh" | quote }}
+  storefront.php: {{ .Files.Get "files/storefront.php" | quote }}
+  storefront.css: {{ .Files.Get "files/storefront.css" | quote }}
+  catalog.json: {{ .Files.Get "files/catalog.json" | quote }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: store-provisioner
+  namespace: {{ $platform }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+---
+# Least privilege for what a store is made of. No wildcards, no pods/exec, no RBAC objects,
+# and Secrets are write-only (no get/list/watch): per-store secrets are derived, never read back.
+# Namespaces are cluster-scoped, so RBAC cannot restrict them by name; the code only touches
+# namespaces named store-* that carry its managed-by label, and refuses to delete anything else.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: urumi-store-provisioner
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: [namespaces]
+    verbs: [get, create, patch, delete]
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [create, patch]
+  - apiGroups: [""]
+    resources: [configmaps, services, persistentvolumeclaims, resourcequotas, limitranges]
+    verbs: [get, create, patch]
+  - apiGroups: [apps]
+    resources: [deployments, statefulsets]
+    verbs: [get, create, patch]
+  - apiGroups: [batch]
+    resources: [jobs]
+    verbs: [get, create, patch, delete]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingresses, networkpolicies]
+    verbs: [get, create, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: urumi-store-provisioner
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: urumi-store-provisioner
+subjects:
+  - kind: ServiceAccount
+    name: store-provisioner
+    namespace: {{ $platform }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: store-provisioner
+  namespace: {{ $platform }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  # One reconciler at a time. State lives in Postgres and the cluster, so a restart resumes work.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: store-provisioner
+  template:
+    metadata:
+      labels:
+        {{- include "urumi.labels" . | nindent 8 }}
+        app.kubernetes.io/name: store-provisioner
+        app.kubernetes.io/component: store-provisioner
+      annotations:
+        checksum/files: {{ list (.Files.Get "files/store-setup.sh") (.Files.Get "files/storefront.php") (.Files.Get "files/storefront.css") (.Files.Get "files/catalog.json") | toJson | sha256sum | trunc 16 }}
+        checksum/config: {{ toJson $p | sha256sum | trunc 16 }}
+    spec:
+      serviceAccountName: store-provisioner
+      automountServiceAccountToken: true
+      {{- include "urumi.podSecurity" . | nindent 6 }}
+      containers:
+        - name: provisioner
+          image: {{ include "urumi.ownImage" (list . .Values.gateway.image) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          envFrom:
+            - configMapRef: { name: store-config }
+          env:
+            - name: MODE
+              value: provisioner
+            - name: PORT
+              value: "8081"
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: gateway, key: DATABASE_URL } }
+            - name: CREDENTIALS_KEY
+              valueFrom: { secretKeyRef: { name: gateway, key: CREDENTIALS_KEY } }
+          ports:
+            - name: http
+              containerPort: 8081
+          startupProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 4
+          resources: {{- toYaml $p.provisioner.resources | nindent 12 }}
+          {{- include "urumi.containerSecurity" . | nindent 10 }}
+          volumeMounts:
+            - name: files
+              mountPath: /etc/urumi/store-setup
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: files
+          configMap: { name: store-setup-files }
+        - name: tmp
+          emptyDir: {}
+{{- if .Values.networkPolicies.enabled }}
+---
+# Provisioner: no inbound traffic except probes; out to Postgres and the Kubernetes API only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: store-provisioner
+  namespace: {{ $platform }}
+  labels: {{- include "urumi.labels" . | nindent 4 }}
+spec:
+  podSelector: { matchLabels: { app.kubernetes.io/name: store-provisioner } }
+  policyTypes: [Ingress, Egress]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: postgres } }
+      ports: [{ protocol: TCP, port: 5432 }]
+    # The API server's address is node-specific (k3s: node IP:6443 behind the kubernetes Service).
+    - ports: [{ protocol: TCP, port: 6443 }, { protocol: TCP, port: 443 }]
+{{- end }}
+{{- end }}

@@ -137,6 +137,27 @@ const MIGRATIONS: string[] = [
     seeded_at timestamptz NOT NULL DEFAULT now()
   );
   `,
+  /* 2: provisioned stores (desired state for the store provisioner) */ `
+  CREATE TABLE stores (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug text NOT NULL UNIQUE,
+    name text NOT NULL,
+    owner_id uuid REFERENCES users(id) ON DELETE SET NULL,
+    status text NOT NULL CHECK (status IN ('provisioning', 'ready', 'failed', 'deleting')),
+    phase text NOT NULL DEFAULT 'Queued',
+    status_reason text,
+    namespace text NOT NULL,
+    url text NOT NULL,
+    server_id uuid REFERENCES servers(id) ON DELETE SET NULL,
+    applied_at timestamptz,
+    deadline_at timestamptz NOT NULL,
+    ready_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+  );
+  CREATE INDEX stores_owner_idx ON stores (owner_id);
+  CREATE INDEX stores_status_idx ON stores (status);
+  `,
 ];
 
 export async function migrate(db: Db): Promise<void> {

@@ -11,7 +11,7 @@ npm test
 
 | Workspace | Tests | What runs for real |
 |---|---|---|
-| `apps/gateway` | 22 | Real gateway app; real Postgres (PGlite, WASM); the real Inventory and Support MCP servers plus a slow test server on ephemeral ports; the real MCP SDK client |
+| `apps/gateway` | 37 (incl. 12 multi-store, 3 SSRF) | Real gateway app; real Postgres (PGlite, WASM); the real Inventory and Support MCP servers plus a slow test server on ephemeral ports; the real MCP SDK client |
 | `apps/woo-mcp` | 9 | Real MCP server against a fake WooCommerce that verifies OAuth signatures with a port of WooCommerce's PHP verifier |
 | `apps/inventory-mcp` | 4 | SQLite store |
 | `apps/support-mcp` | 3 | SQLite store |
@@ -28,7 +28,7 @@ Gateway tests cover:
 - **Chat agent:** the loop runs with a scripted model; calls are attributed to the signed-in user with `source=chat`, and the agent can't be steered into a forbidden tool
 - **Audit API:** members see only their own rows; filters work; the overview statistics are correct
 
-**Last run: 38/38 passed.**
+**Last run: 53/53 passed.**
 
 ## 2. End-to-end definition of done, against the deployed cluster
 
@@ -38,7 +38,7 @@ node scripts/e2e.mjs        # needs the release from scripts/local-up.sh and kub
 
 The script talks only to the public URLs, exactly as a user or client would. The one exception is `kubectl scale` to kill a pod. Storefront checkout goes through WooCommerce's Store API, which is the same API the checkout page calls.
 
-**Last run on local k3d (k3s v1.31.5, WordPress 6.8, WooCommerce 10.6.2, Groq `openai/gpt-oss-120b`): 31/31 checks passed.**
+**Last run on a fresh install on local k3d (k3s v1.31.5, WordPress 6.8, WooCommerce 10.6.2, Groq `openai/gpt-oss-120b`): 31/31 checks passed.**
 
 | Scenario | Result |
 |---|---|
@@ -117,7 +117,36 @@ npx @modelcontextprotocol/inspector --cli http://app.localtest.me:8088/mcp --tra
 
 The chat agent was also checked in the browser. One question ("Which items are low on warehouse stock, and are there open support tickets about them?") produced `inventory__list_low_stock` plus two `support__search` calls, with the answer rendered as a table.
 
+## 6. Multi-store (bonus)
+
+Automated: `apps/gateway/test/stores.test.ts`, 12 tests on real Postgres with a fake Kubernetes API. They cover:
+
+- idempotent create
+- the per-user limit
+- recovery after a crash mid-apply
+- readiness phases
+- exactly-once MCP registration with the store's own token
+- deadline leading to Failed with a reason, then retry
+- teardown order
+- refusing to delete an unmanaged namespace
+- quota and limits
+- NetworkPolicy shape
+- derived secrets
+
+**Live, on the k3d cluster:**
+
+| Check | Result |
+|---|---|
+| Create "Mumbai" from the API | Ready in ~3.5 min: *Creating namespace → Starting database → Installing WooCommerce and products → Ready* |
+| Auto-registration | `mumbai` server Connected with 5 tools (`mumbai__list_orders`, …), no manual step |
+| Storefront `http://mumbai.localtest.me:8088` | HTTP 200, same catalog and theme |
+| Namespace contents | ResourceQuota, LimitRange, 6 NetworkPolicies, 2 PVCs, Ingress |
+| Isolation | Mumbai's woo-mcp → main store WordPress: **blocked**; → main store MariaDB: **blocked**; main woo-mcp → Mumbai WordPress: **blocked**; Mumbai woo-mcp → its own WordPress: reached |
+| Chat: "Compare today's orders across the main store and the Mumbai store" | Called `woocommerce__list_orders` and `mumbai__list_orders`, answered with a table (5 s) |
+| Delete Mumbai | `mumbai__*` tools gone immediately (0); namespace gone in ~20 s; no PersistentVolumes left; store record removed |
+
 ## Not verified here
 
 - **Deployment to a real VPS.** The `values-prod.yaml` render is linted with `helm lint`, but has not been installed on a server.
-- **Claude Code and Cursor GUIs.** Not exercised: adding the server changes the person's own client settings. They use the same Streamable HTTP transport and headers that MCP Inspector used above; the commands are in the README.
+- **Cursor GUI.** Not exercised. Claude Code was tested live (`claude mcp list`: ✓ Connected, plus a prompt that used tools from two servers), as was MCP Inspector (CLI).
+- **Groq free tier.** It allows 8,000 tokens per minute. The agent keeps requests small and waits and retries when told to, but asking many questions back to back can still pause for a few seconds.

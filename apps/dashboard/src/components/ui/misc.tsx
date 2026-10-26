@@ -19,26 +19,26 @@ export function Skeleton({ className }: { className?: string }) {
 
 type Tone = "neutral" | "accent" | "ok" | "warn" | "bad";
 const tones: Record<Tone, string> = {
-  neutral: "text-ink-2 bg-subtle",
-  accent: "text-accent bg-accent-soft",
-  ok: "text-ok bg-ok-soft",
-  warn: "text-warn bg-warn-soft",
-  bad: "text-bad bg-bad-soft",
+  neutral: "text-slate-600 bg-slate-100",
+  accent: "text-blue-700 bg-blue-50",
+  ok: "text-emerald-700 bg-emerald-50",
+  warn: "text-amber-700 bg-amber-50",
+  bad: "text-red-700 bg-red-50",
 };
 
 export function Badge({ tone = "neutral", className, children }: { tone?: Tone; className?: string; children: ReactNode }) {
   return (
-    <span className={cn("inline-flex h-4.5 items-center gap-1 rounded-[4px] px-1.5 text-2xs font-medium whitespace-nowrap", tones[tone], className)}>
+    <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-semibold whitespace-nowrap", tones[tone], className)}>
       {children}
     </span>
   );
 }
 
 const statusStyle: Record<ServerStatus, { label: string; dot: string; text: string }> = {
-  connected: { label: "Connected", dot: "bg-ok", text: "text-ink-2" },
-  unreachable: { label: "Unreachable", dot: "bg-bad", text: "text-bad" },
-  disabled: { label: "Disabled", dot: "bg-faint", text: "text-muted" },
-  unknown: { label: "Checking", dot: "bg-warn", text: "text-muted" },
+  connected: { label: "Connected", dot: "bg-emerald-500", text: "text-emerald-700 bg-emerald-50" },
+  unreachable: { label: "Unreachable", dot: "bg-red-500", text: "text-red-700 bg-red-50" },
+  disabled: { label: "Disabled", dot: "bg-slate-400", text: "text-slate-600 bg-slate-100" },
+  unknown: { label: "Checking", dot: "bg-amber-500", text: "text-amber-700 bg-amber-50" },
 };
 
 export function StatusDot({ status, className }: { status: ServerStatus; className?: string }) {
@@ -53,23 +53,23 @@ export function StatusDot({ status, className }: { status: ServerStatus; classNa
 export function StatusBadge({ status, className }: { status: ServerStatus; className?: string }) {
   const s = statusStyle[status];
   return (
-    <span className={cn("inline-flex items-center gap-2 text-[13px]", s.text, className)}>
-      <StatusDot status={status} />
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] font-semibold whitespace-nowrap", s.text, className)}>
+      <StatusDot status={status} className="size-1.5 [&>span]:size-1.5" />
       {s.label}
     </span>
   );
 }
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cn("rounded-lg border border-line bg-surface shadow-card", className)}>{children}</div>;
+  return <div className={cn("rounded-2xl border border-line bg-surface shadow-card", className)}>{children}</div>;
 }
 
 export function CardHeader({ title, description, actions }: { title: ReactNode; description?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="flex min-h-11 items-center justify-between gap-4 border-b border-line px-4 py-2.5">
+    <div className="flex min-h-14 items-center justify-between gap-4 border-b border-line px-5 py-3.5">
       <div className="min-w-0">
-        <h2 className="text-[13px] font-medium text-ink">{title}</h2>
-        {description && <p className="text-[12px] text-muted">{description}</p>}
+        <h2 className="text-[15px] font-bold text-ink">{title}</h2>
+        {description && <p className="mt-0.5 text-[13px] text-muted">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
     </div>
@@ -79,9 +79,9 @@ export function CardHeader({ title, description, actions }: { title: ReactNode; 
 /** Section title used outside cards (Overview, detail pages). */
 export function SectionTitle({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
   return (
-    <div className="mb-2.5 flex items-baseline justify-between gap-3">
-      <h2 className="text-[13px] font-medium text-ink">{children}</h2>
-      {aside && <div className="text-[12px] text-muted">{aside}</div>}
+    <div className="mb-3 flex items-baseline justify-between gap-3">
+      <h2 className="text-[16px] font-bold text-ink">{children}</h2>
+      {aside && <div className="text-[13px] text-muted">{aside}</div>}
     </div>
   );
 }
@@ -90,8 +90,8 @@ export function PageHeader({ title, description, actions }: { title: ReactNode; 
   return (
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <h1 className="text-[19px] leading-7 font-semibold tracking-[-0.015em] text-ink">{title}</h1>
-        {description && <p className="mt-0.5 max-w-2xl text-[13px] text-muted">{description}</p>}
+        <h1 className="text-[24px] leading-8 font-bold tracking-[-0.02em] text-ink">{title}</h1>
+        {description && <p className="mt-1 max-w-2xl text-[14px] text-muted">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -101,9 +101,9 @@ export function PageHeader({ title, description, actions }: { title: ReactNode; 
 export function EmptyState({ icon, title, children, action }: { icon?: ReactNode; title: string; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center px-6 py-14 text-center">
-      {icon && <div className="mb-3 text-faint [&_svg]:size-5 [&_svg]:stroke-[1.5]">{icon}</div>}
-      <p className="text-[13px] font-medium text-ink">{title}</p>
-      {children && <div className="mt-1 max-w-xs text-[12.5px] text-muted">{children}</div>}
+      {icon && <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-slate-100 text-slate-400 [&_svg]:size-7">{icon}</div>}
+      <p className="text-[15px] font-semibold text-ink">{title}</p>
+      {children && <div className="mt-1 max-w-sm text-[13px] text-muted">{children}</div>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -162,9 +162,9 @@ export function Switch({ checked, onCheckedChange, disabled, label }: { checked:
       onCheckedChange={onCheckedChange}
       disabled={disabled}
       aria-label={label}
-      className="relative inline-flex h-4 w-7 shrink-0 cursor-pointer items-center rounded-full bg-line-strong transition-colors data-[state=checked]:bg-ink disabled:cursor-not-allowed disabled:opacity-50"
+      className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full bg-slate-300 transition-colors data-[state=checked]:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
     >
-      <SwitchPrimitive.Thumb className="block size-3 translate-x-0.5 rounded-full bg-white shadow-sm transition-transform data-[state=checked]:translate-x-[13px]" />
+      <SwitchPrimitive.Thumb className="block size-4 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[18px]" />
     </SwitchPrimitive.Root>
   );
 }
@@ -179,6 +179,43 @@ export function Field({ label, children }: { label: string; children: ReactNode 
     <div className="grid grid-cols-[120px_1fr] gap-3 py-2 text-[13px]">
       <dt className="text-muted">{label}</dt>
       <dd className="min-w-0 text-ink">{children}</dd>
+    </div>
+  );
+}
+
+const tileGradients = {
+  blue: "from-blue-500 to-blue-600 shadow-blue-500/30",
+  indigo: "from-indigo-500 to-purple-600 shadow-indigo-500/30",
+  emerald: "from-emerald-500 to-emerald-600 shadow-emerald-500/30",
+  amber: "from-amber-400 to-orange-500 shadow-orange-500/30",
+  rose: "from-rose-500 to-red-600 shadow-red-500/30",
+  slate: "from-slate-600 to-slate-800 shadow-slate-600/30",
+} as const;
+export type TileColor = keyof typeof tileGradients;
+
+/** Gradient icon tile used for metrics, servers and stores. */
+export function IconTile({ color = "blue", size = "md", children, className }: { color?: TileColor; size?: "sm" | "md" | "lg"; children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 items-center justify-center bg-gradient-to-br text-white shadow-lg",
+        size === "sm" && "size-9 rounded-xl [&_svg]:size-4",
+        size === "md" && "size-12 rounded-2xl [&_svg]:size-6",
+        size === "lg" && "size-16 rounded-2xl [&_svg]:size-8",
+        tileGradients[color],
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Thin progress bar for real ratios (e.g. servers online / total). */
+export function Meter({ value, color = "bg-blue-600" }: { value: number; color?: string }) {
+  return (
+    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+      <div className={cn("h-2 rounded-full transition-all duration-500", color)} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
     </div>
   );
 }

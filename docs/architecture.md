@@ -94,6 +94,58 @@ When there are more than `CHAT_MAX_DIRECT_TOOLS` (40) tools, the agent gets two 
 
 The agent runs in-process and calls `Gateway.callTool` directly rather than looping back over HTTP to `/mcp`. It is still "through the gateway": the same code enforces the same rules. This avoids minting a second kind of credential for the agent.
 
+## Multi-store provisioning (bonus)
+
+From the **Stores** page, any user can create and delete WooCommerce stores (up to a per-person limit). Each store is connected to the gateway automatically.
+
+```
+Dashboard ──POST /api/stores──► gateway API ──INSERT stores (status=provisioning)──► Postgres
+                                                                                      ▲   │
+                                    store-provisioner (own Deployment + ServiceAccount)│   │ every 5 s
+                                    reconcile loop ◄───────────────────────────────────┘   ▼
+                                       │ server-side apply                    namespace store-<slug>
+                                       └──────────────────────────────────►   ResourceQuota, LimitRange
+                                                                               NetworkPolicies (deny-all + allows)
+                                                                               Secret, ConfigMap (setup files)
+                                                                               MariaDB StatefulSet + PVC
+                                                                               WordPress Deployment + PVC + Ingress <slug>.<domain>
+                                                                               store-setup Job (WP-CLI)
+                                                                               woo-mcp Deployment + Service
+                                       when all ready ──► INSERT servers (slug=<slug>, bearer token encrypted)
+                                                          → tools appear as <slug>__list_orders, <slug>__create_product …
+```
+
+- **Desired state vs. actual state.** The API only writes the intent (`stores` row). The provisioner compares it with the cluster and moves each store one step forward per tick:
+  1. apply manifests
+  2. MariaDB ready
+  3. WordPress ready
+  4. setup Job succeeded
+  5. MCP server ready
+  6. register the MCP server
+
+  The current step is shown live in the dashboard ("Installing WooCommerce and products").
+- **Kubernetes-native.** The provisioner uses plain Kubernetes API calls with **server-side apply**. Applying the same manifests twice is a no-op, which is what makes retries and restarts safe.
+- **Safe to retry.** Creating a store with the same name, as the same person, returns the existing store instead of a duplicate. A Failed store can be retried, which resets its deadline and re-applies everything (a failed setup Job is replaced).
+- **Recovery.** Nothing important lives in memory. If the provisioner restarts mid-provisioning, the next tick re-reads Postgres and the cluster and carries on. A per-store **deadline** (`stores.timeoutMinutes`, default 25) guarantees a stuck store ends **Failed with the step it was stuck on**, for example `Provisioning timed out after 25 min while "Installing WooCommerce and products"`.
+- **No stored passwords.** Each store's passwords, WooCommerce REST key and MCP token are derived as `HMAC(master key, store id + purpose)`. They are stable across retries, different for a re-created store with the same name, and the provisioner never needs permission to read Secrets.
+- **Automatic MCP registration.** When the store is ready, the provisioner inserts a `servers` row in the same transaction that marks the store Ready: the URL `http://woo-mcp.store-<slug>.svc.cluster.local:3101/mcp` and the bearer token encrypted like any other credential. Write tools are admin-only by default. The gateway's health loop discovers the tools within seconds. **Tool names say which store they act on:** `mumbai__list_orders` vs. `woocommerce__list_orders` (the main store).
+- **Clean teardown.** Delete removes the MCP registration first, so the tools vanish for every client immediately. The provisioner then deletes the namespace, which removes the pods, Secrets, Services, Ingress and PVCs (local-path volumes are deleted with their PVC), and finally the `stores` row. It refuses to delete any namespace that lacks its `managed-by` label.
+- **Isolation.**
+  - Each store namespace starts with deny-all.
+  - Its `woo-mcp` accepts traffic only from gateway pods, and may reach only **its own** WordPress (a `podSelector` without a `namespaceSelector` means "this namespace").
+  - MariaDB accepts only its own WordPress and setup Job.
+
+  So store A's MCP server cannot reach store B's database or WordPress.
+- **Guardrails.**
+  - per namespace: `ResourceQuota` (1 CPU / 1 GiB requested, 3 CPU / 2 GiB limits, 8 pods, 3 PVCs, 6 GiB storage) and `LimitRange` (container defaults and maximums)
+  - `stores.maxPerUser` (default 2) per person
+  - the provisioning deadline
+- **Least privilege.** Only the provisioner has Kubernetes API access, through a ClusterRole that lists exactly the resource types a store needs:
+  - no wildcards, no `pods/exec`, no RBAC objects
+  - Secrets are create/patch only
+
+  The internet-facing gateway has no ServiceAccount token at all.
+
 ## Architecture choices and tradeoffs
 
 - **Stateless MCP everywhere** (`sessionIdGenerator: undefined`, JSON responses). Any gateway replica can serve any request, revocation takes effect on the very next request, and there's no SSE buffering behind proxies. The cost: no server-initiated notifications such as `tools/list_changed`, so clients see new tools when they next list them.

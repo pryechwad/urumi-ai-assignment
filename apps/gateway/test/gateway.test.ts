@@ -20,6 +20,7 @@ import { Gateway } from "../src/gateway.ts";
 import { createLogger } from "../src/log.ts";
 import { Metrics } from "../src/metrics.ts";
 import { seed } from "../src/seed.ts";
+import { loadStoreConfig } from "../src/stores/config.ts";
 import { createSafeFetch } from "../src/ssrf.ts";
 import { UpstreamManager } from "../src/upstreams.ts";
 import { createTestDb, listen, mcpClient, sleep, tempDir } from "./helpers.ts";
@@ -137,7 +138,7 @@ describe("MCP gateway", () => {
 
     provider = new ScriptedProvider([]);
     const agent = new ChatAgent(gateway, provider, { maxSteps: 4, maxDirectTools: 40, timeZone: "UTC", timeoutMs: 5000 });
-    app = createApp({ db, config, gateway, cipher, ssrf, agent, log: glog, metrics });
+    app = createApp({ db, config, gateway, cipher, ssrf, agent, log: glog, metrics, stores: loadStoreConfig({ STORES_ENABLED: "true", STORE_MAX_PER_USER: "1" }) });
     const gw = await listen(app);
     gatewayUrl = gw.url;
     closers.push(gw.close);
@@ -246,9 +247,9 @@ describe("MCP gateway", () => {
     it("routes calls to the right upstream with the upstream's own credential", async () => {
       upstreamAuthHeaders.length = 0;
       const client = await mcpClient(gatewayUrl, memberKey);
-      const inv = await client.callTool({ name: "inventory__check_stock", arguments: { sku: "URU-HOD-002" } });
+      const inv = await client.callTool({ name: "inventory__check_stock", arguments: { sku: "URU-TEE-002" } });
       expect(inv.isError).toBeFalsy();
-      expect(JSON.parse(text(inv)).name).toBe("Everyday Hoodie");
+      expect(JSON.parse(text(inv)).name).toBe("Electric Print Sports Tee");
       const sup = await client.callTool({ name: "support__search", arguments: { query: "order" } });
       expect(JSON.parse(text(sup)).tickets.length).toBeGreaterThan(0);
       await client.close();
@@ -375,7 +376,7 @@ describe("MCP gateway", () => {
   describe("chat agent", () => {
     it("runs the tool loop through the gateway as the signed-in user", async () => {
       provider["turns"] = [
-        { text: "", toolCalls: [{ id: "c1", name: "inventory__check_stock", args: { sku: "URU-CAP-004" } }] },
+        { text: "", toolCalls: [{ id: "c1", name: "inventory__check_stock", args: { sku: "URU-CAP-003" } }] },
         { text: "", toolCalls: [{ id: "c2", name: "support__search", args: { query: "order" } }] },
         { text: "The cap has 7 available units and there are open tickets.", toolCalls: [] },
       ];
@@ -390,7 +391,7 @@ describe("MCP gateway", () => {
       // The model was given the member's tool list (no admin-only tools) and real tool output.
       expect(provider.seenTools.map((t) => t.name)).not.toContain("support__update_ticket_status");
       const lastTurn = provider.seenMessages.at(-1)!;
-      expect(lastTurn.some((m) => m.role === "tool" && m.content.includes("Canvas Baseball Cap"))).toBe(true);
+      expect(lastTurn.some((m) => m.role === "tool" && m.content.includes("Plaid Baseball Cap"))).toBe(true);
 
       const audit = await db.query<{ source: string; user_email: string; tool: string }>(
         "SELECT source, user_email, tool FROM audit_logs WHERE source = 'chat' ORDER BY id",

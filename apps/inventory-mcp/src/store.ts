@@ -17,13 +17,22 @@ export interface Item {
 }
 
 const SEED: Array<[string, string, string, number, number, number]> = [
-  // sku, name, warehouse, on_hand, reserved, reorder_point
-  ["URU-TEE-001", "Classic Cotton T-Shirt", "Pune", 140, 12, 40],
-  ["URU-HOD-002", "Everyday Hoodie", "Pune", 18, 6, 25],
-  ["URU-MUG-003", "Ceramic Coffee Mug", "Bengaluru", 260, 0, 60],
-  ["URU-CAP-004", "Canvas Baseball Cap", "Bengaluru", 9, 2, 20],
-  ["URU-BAG-005", "Recycled Tote Bag", "Pune", 75, 5, 30],
-  ["URU-BTL-006", "Steel Water Bottle", "Delhi", 0, 0, 15],
+  // sku, name, warehouse, on_hand, reserved, reorder_point (same SKUs as the store catalog)
+  ["URU-TEE-001", "Graphic Cotton Tee – Olive", "Pune", 140, 12, 40],
+  ["URU-TEE-002", "Electric Print Sports Tee", "Pune", 22, 8, 25],
+  ["URU-CAP-003", "Plaid Baseball Cap", "Bengaluru", 9, 2, 20],
+  ["URU-MUG-004", "Blue Ceramic Mug", "Bengaluru", 260, 0, 60],
+  ["URU-BAG-005", "Navy Canvas Tote", "Pune", 75, 5, 30],
+  ["URU-BPK-006", "Trail Backpack 40L", "Delhi", 31, 4, 15],
+  ["URU-BAG-007", "Utility Gear Bag", "Delhi", 6, 1, 10],
+  ["URU-WAL-008", "Leather Bifold Wallet", "Mumbai", 88, 10, 25],
+  ["URU-WAL-009", "Slim Card Wallet", "Mumbai", 120, 3, 30],
+  ["URU-SUN-010", "Aviator Sunglasses", "Mumbai", 14, 6, 20],
+  ["URU-SUN-011", "Rimless Gradient Sunglasses", "Mumbai", 40, 2, 15],
+  ["URU-WAT-012", "Chronograph Steel Watch", "Delhi", 0, 0, 8],
+  ["URU-WAT-013", "Minimal White Watch", "Delhi", 25, 1, 8],
+  ["URU-AUD-014", "Studio Headphones", "Bengaluru", 11, 3, 10],
+  ["URU-AUD-015", "Wireless Neckband Earphones", "Bengaluru", 64, 9, 20],
 ];
 
 export class InventoryStore {
@@ -51,14 +60,12 @@ export class InventoryStore {
         created_at TEXT NOT NULL
       );
     `);
-    const count = this.db.prepare("SELECT COUNT(*) AS n FROM items").get() as { n: number };
-    if (count.n === 0) {
-      const insert = this.db.prepare(
-        "INSERT INTO items (sku, name, warehouse, on_hand, reserved, reorder_point, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      );
-      const now = new Date().toISOString();
-      for (const row of SEED) insert.run(...row, now);
-    }
+    // Insert any catalog SKU that is missing; existing rows (and their stock movements) are kept.
+    const insert = this.db.prepare(
+      "INSERT OR IGNORE INTO items (sku, name, warehouse, on_hand, reserved, reorder_point, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    );
+    const now = new Date().toISOString();
+    for (const row of SEED) insert.run(...row, now);
   }
 
   private static view(row: Record<string, unknown>): Item {

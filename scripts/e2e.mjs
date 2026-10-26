@@ -5,7 +5,7 @@
 //
 // Env (defaults match values-local.yaml):
 //   APP_URL=http://app.localtest.me:8088  STORE_URL=http://store.localtest.me:8088
-//   ADMIN_EMAIL=admin@urumi.local         ADMIN_PASSWORD=<read from the cluster Secret if unset>
+//   ADMIN_EMAIL=pryechwad@gmail.com         ADMIN_PASSWORD=<read from the cluster Secret if unset>
 //   KUBE_CONTEXT=k3d-urumi
 //
 // User A = the bootstrap admin (dashboard + chat agent). User B = a member invited by this
@@ -18,7 +18,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 const APP = process.env.APP_URL ?? "http://app.localtest.me:8088";
 const STORE = process.env.STORE_URL ?? "http://store.localtest.me:8088";
 const CTX = process.env.KUBE_CONTEXT ?? "k3d-urumi";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "admin@urumi.local";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "pryechwad@gmail.com";
 const kubectl = (...args) => execFileSync("kubectl", ["--context", CTX, ...args], { encoding: "utf8" }).trim();
 const ADMIN_PASSWORD =
   process.env.ADMIN_PASSWORD ??
@@ -92,7 +92,7 @@ const aKey = (await A.post("/keys", { name: "e2e admin" })).key;
 const adminClient = await mcp(aKey);
 
 section("Store: storefront checkout with Cash on delivery");
-const products = JSON.parse(text(await adminClient.callTool({ name: "woocommerce__list_products", arguments: { search: "T-Shirt" } })));
+const products = JSON.parse(text(await adminClient.callTool({ name: "woocommerce__list_products", arguments: { search: "Tee" } })));
 const tee = products.products[0];
 check("seeded product exists in WooCommerce", Boolean(tee), tee ? `${tee.name} #${tee.id}` : "");
 const order1 = await checkout(tee.id, "Storefront");

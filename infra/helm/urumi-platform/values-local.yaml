@@ -15,6 +15,10 @@ hosts:
   store: store.localtest.me
   app: app.localtest.me
 
+stores:
+  # *.localtest.me resolves to 127.0.0.1, so new stores are reachable at http://<slug>.localtest.me:8088
+  domain: localtest.me
+
 store:
   adminEmail: admin@store.localtest.me
 
@@ -22,5 +26,5 @@ gateway:
   replicas: 1
   cookieSecure: false
   bootstrapAdmin:
-    email: admin@urumi.local
-    name: Ada Admin
+    email: pryechwad@gmail.com
+    name: Urumi AI

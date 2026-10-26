@@ -10,6 +10,8 @@ import { CredentialCipher, hashPassword, newApiKey, randomToken, sha256, verifyP
 import type { Db } from "./db.ts";
 import { exposedToolName, SLUG_PATTERN, type Caller, type Gateway, type ServerRow } from "./gateway.ts";
 import { SsrfError, validateUpstreamUrl, type SsrfPolicy } from "./ssrf.ts";
+import type { StoreConfig } from "./stores/config.ts";
+import { storesRouter } from "./stores/routes.ts";
 
 export interface ApiDeps {
   db: Db;
@@ -18,6 +20,7 @@ export interface ApiDeps {
   cipher: CredentialCipher;
   ssrf: SsrfPolicy;
   agent?: ChatAgent;
+  stores: StoreConfig;
 }
 
 const FORBIDDEN_HEADERS = new Set([
@@ -176,6 +179,10 @@ export function apiRouter(deps: ApiDeps) {
       toolNameFormat: "<server>__<tool>",
     });
   });
+
+  // ---------------------------------------------------------------- stores (multi-store)
+
+  router.use("/stores", storesRouter(db, gateway, deps.stores));
 
   // ---------------------------------------------------------------- overview
 

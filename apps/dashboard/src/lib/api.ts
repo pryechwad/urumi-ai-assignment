@@ -165,3 +165,32 @@ export interface ChatResponse {
   model: string;
   toolMode: "direct" | "search";
 }
+
+export type StoreStatus = "provisioning" | "ready" | "failed" | "deleting";
+
+export interface StoreInfo {
+  id: string;
+  slug: string;
+  name: string;
+  status: StoreStatus;
+  phase: string;
+  reason: string | null;
+  url: string;
+  namespace: string;
+  ownerId: string | null;
+  ownerEmail: string | null;
+  toolPrefix: string;
+  serverId: string | null;
+  toolCount: number;
+  createdAt: string;
+  readyAt: string | null;
+  deadlineAt: string;
+}
+
+export interface StoresResponse {
+  enabled: boolean;
+  maxPerUser: number;
+  used: number;
+  timeoutMinutes: number;
+  stores: StoreInfo[];
+}

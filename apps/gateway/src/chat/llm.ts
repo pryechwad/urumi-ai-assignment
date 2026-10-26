@@ -29,7 +29,15 @@ export interface LlmProvider {
 
 export class LlmError extends Error {}
 
-async function postJson(url: string, headers: Record<string, string>, body: unknown, signal: AbortSignal) {
+/** Seconds the provider asked us to wait on a 429, from Retry-After or the error text ("try again in 22.1s"). */
+function retryAfterSeconds(res: Response, text: string): number | undefined {
+  const header = Number(res.headers.get("retry-after"));
+  if (Number.isFinite(header) && header > 0) return header;
+  const m = /try again in ([\d.]+)\s*s/i.exec(text);
+  return m ? Number(m[1]) : undefined;
+}
+
+async function postJson(url: string, headers: Record<string, string>, body: unknown, signal: AbortSignal, attempt = 0): Promise<any> {
   let res: Response;
   try {
     res = await fetch(url, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body), signal });
@@ -38,6 +46,12 @@ async function postJson(url: string, headers: Record<string, string>, body: unkn
     throw new LlmError(e.name === "TimeoutError" || e.name === "AbortError" ? "The model did not respond in time" : `Could not reach the model provider: ${e.message}`);
   }
   const text = await res.text();
+  // Free-tier rate limits (tokens per minute) clear within seconds: wait as asked and retry (max 3 times).
+  const wait = res.status === 429 ? retryAfterSeconds(res, text) : undefined;
+  if (wait !== undefined && wait <= 60 && attempt < 3) {
+    await new Promise((r) => setTimeout(r, Math.ceil(wait * 1000) + 500));
+    return postJson(url, headers, body, signal, attempt + 1);
+  }
   if (!res.ok) {
     let detail = text.slice(0, 300);
     try {

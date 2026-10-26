@@ -80,7 +80,7 @@ The `store-setup` Job (a Helm post-install/post-upgrade hook, WP-CLI) is idempot
 - disables shipping, so checkout needs only billing details
 - sets the timezone and currency
 - registers the MCP server's REST key
-- seeds six products whose SKUs match the Inventory server
+- seeds 15 products with photos in 6 categories (SKUs match the Inventory server), a homepage with a hero banner, the main menu, theme colours and a photo credits page
 
 Follow it with:
 
@@ -94,7 +94,7 @@ kubectl -n urumi-store logs job/store-setup -f
 |---|---|
 | Storefront | http://store.localtest.me:8088 |
 | Store admin | http://store.localtest.me:8088/wp-admin (user `storeadmin`) |
-| Dashboard | http://app.localtest.me:8088 (user `admin@urumi.local`) |
+| Dashboard | http://app.localtest.me:8088 (user `pryechwad@gmail.com`) |
 | MCP endpoint | http://app.localtest.me:8088/mcp |
 
 ### Verify
@@ -175,6 +175,8 @@ helm upgrade --install urumi infra/helm/urumi-platform \
 | `global.imageRegistry` / `imagePullPolicy` | none / `Never` | `ghcr.io/<you>` / `IfNotPresent` | Where images come from |
 | `global.storageClass`, `*.persistence.size` | default, small | `local-path` or block storage, larger | Storage |
 | `gateway.replicas`, `dashboard.replicas` | 1 | 2 | Availability |
+| `stores.domain` | `localtest.me` (stores at `<slug>.localtest.me:8088`) | `shops.example.com` (wildcard DNS `*.shops.example.com` → VPS) | Hosts of provisioned stores |
+| `stores.maxPerUser`, `stores.timeoutMinutes` | 2, 25 | 3, 25 | Guardrails for multi-store |
 | `resources` | small | larger | Real traffic |
 | `store.setup.woocommerceVersion` | 10.6.2 (default) | same, or a newer pin together with a newer WordPress image | Reproducible store installs |
 

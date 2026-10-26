@@ -51,11 +51,21 @@ export function parsePrivateHosts(raw: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Allowlist patterns:
+ *   "host.example"            exact match
+ *   "*.suffix.example"        any host ending in .suffix.example
+ *   "woo-mcp.store-*.svc..."  "*" inside a label matches one DNS label fragment ([a-z0-9-]+),
+ *                             used for per-store namespaces created by the store provisioner.
+ */
 export function hostAllowedPrivate(hostname: string, policy: SsrfPolicy): boolean {
   const host = hostname.toLowerCase().replace(/\.$/, "");
-  return policy.privateHosts.some((pattern) =>
-    pattern.startsWith("*.") ? host.endsWith(pattern.slice(1)) && host.length > pattern.length - 1 : host === pattern,
-  );
+  return policy.privateHosts.some((pattern) => {
+    if (pattern.startsWith("*.")) return host.endsWith(pattern.slice(1)) && host.length > pattern.length - 1;
+    if (!pattern.includes("*")) return host === pattern;
+    const re = new RegExp("^" + pattern.split("*").map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join("[a-z0-9-]+") + "$");
+    return re.test(host);
+  });
 }
 
 function normalise(ip: string): { ip: string; family: "ipv4" | "ipv6" } {

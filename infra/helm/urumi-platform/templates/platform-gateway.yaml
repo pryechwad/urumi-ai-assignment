@@ -31,7 +31,8 @@ data:
   BOOTSTRAP_ADMIN_EMAIL: {{ $g.bootstrapAdmin.email | quote }}
   BOOTSTRAP_ADMIN_NAME: {{ $g.bootstrapAdmin.name | quote }}
   # Only hostnames in the MCP namespace may resolve to private (cluster) addresses.
-  UPSTREAM_PRIVATE_HOSTS: {{ printf "*.%s.svc.cluster.local,*.%s.svc" $mcpNs $mcpNs | quote }}
+  # ...plus each provisioned store's own MCP server (namespace store-<slug>).
+  UPSTREAM_PRIVATE_HOSTS: {{ printf "*.%s.svc.cluster.local,*.%s.svc,woo-mcp.store-*.svc.cluster.local" $mcpNs $mcpNs | quote }}
   UPSTREAM_CONNECT_TIMEOUT_MS: {{ $g.timeouts.connectMs | quote }}
   UPSTREAM_LIST_TIMEOUT_MS: {{ $g.timeouts.listMs | quote }}
   UPSTREAM_CALL_TIMEOUT_MS: {{ $g.timeouts.callMs | quote }}
@@ -106,6 +107,9 @@ spec:
               containerPort: 8080
           envFrom:
             - configMapRef: { name: gateway }
+            {{- if .Values.stores.enabled }}
+            - configMapRef: { name: store-config }
+            {{- end }}
           env:
             - name: DATABASE_URL
               valueFrom: { secretKeyRef: { name: gateway, key: DATABASE_URL } }
