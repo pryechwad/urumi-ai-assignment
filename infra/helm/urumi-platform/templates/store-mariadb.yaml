@@ -71,17 +71,20 @@ spec:
             periodSeconds: 5
             failureThreshold: 60
           # Probes log in as the application user, so they work on any data directory state.
+          # Generous timeouts: on a busy node a slow answer is not an outage, and taking the
+          # database out of the Service would turn a slow page into a "database error" page.
           readinessProbe:
             exec:
               command: ["sh", "-c", 'mariadb -uwordpress -p"$MARIADB_PASSWORD" -e "SELECT 1" wordpress >/dev/null']
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 10
+            failureThreshold: 6
           livenessProbe:
             exec:
               command: ["sh", "-c", 'mariadb-admin -uwordpress -p"$MARIADB_PASSWORD" ping >/dev/null']
             periodSeconds: 20
-            timeoutSeconds: 5
-            failureThreshold: 6
+            timeoutSeconds: 10
+            failureThreshold: 9
           resources: {{- toYaml $v.resources | nindent 12 }}
           securityContext:
             allowPrivilegeEscalation: false

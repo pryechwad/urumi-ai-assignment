@@ -90,7 +90,8 @@ spec:
             # 2xx/3xx both pass: before setup finishes WordPress redirects to its installer.
             httpGet: { path: /wp-login.php, port: http }
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 10
+            failureThreshold: 6
           livenessProbe:
             tcpSocket: { port: http }
             periodSeconds: 20

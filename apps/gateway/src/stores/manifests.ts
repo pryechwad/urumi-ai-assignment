@@ -219,8 +219,9 @@ export function storeManifests(store: StoreSpec, cfg: StoreConfig, masterKey: st
                 ],
                 ports: [{ name: "mysql", containerPort: 3306 }],
                 startupProbe: { tcpSocket: { port: "mysql" }, periodSeconds: 5, failureThreshold: 60 },
-                readinessProbe: { exec: { command: ["sh", "-c", 'mariadb -uwordpress -p"$MARIADB_PASSWORD" -e "SELECT 1" wordpress >/dev/null'] }, periodSeconds: 10, timeoutSeconds: 5 },
-                livenessProbe: { exec: { command: ["sh", "-c", 'mariadb-admin -uwordpress -p"$MARIADB_PASSWORD" ping >/dev/null'] }, periodSeconds: 20, timeoutSeconds: 5, failureThreshold: 6 },
+                // Tolerant probes: a slow node should not take the database out of the Service.
+                readinessProbe: { exec: { command: ["sh", "-c", 'mariadb -uwordpress -p"$MARIADB_PASSWORD" -e "SELECT 1" wordpress >/dev/null'] }, periodSeconds: 10, timeoutSeconds: 10, failureThreshold: 6 },
+                livenessProbe: { exec: { command: ["sh", "-c", 'mariadb-admin -uwordpress -p"$MARIADB_PASSWORD" ping >/dev/null'] }, periodSeconds: 20, timeoutSeconds: 10, failureThreshold: 9 },
                 resources: { requests: { cpu: "25m", memory: "128Mi" }, limits: { cpu: "500m", memory: "320Mi" } },
                 securityContext: sec,
                 volumeMounts: [
@@ -273,7 +274,7 @@ export function storeManifests(store: StoreSpec, cfg: StoreConfig, masterKey: st
                 env: dbEnv,
                 ports: [{ name: "http", containerPort: 80 }],
                 startupProbe: { tcpSocket: { port: "http" }, periodSeconds: 5, failureThreshold: 60 },
-                readinessProbe: { httpGet: { path: "/wp-login.php", port: "http" }, periodSeconds: 10, timeoutSeconds: 5 },
+                readinessProbe: { httpGet: { path: "/wp-login.php", port: "http" }, periodSeconds: 10, timeoutSeconds: 10, failureThreshold: 6 },
                 livenessProbe: { tcpSocket: { port: "http" }, periodSeconds: 20, timeoutSeconds: 5, failureThreshold: 6 },
                 resources: { requests: { cpu: "50m", memory: "160Mi" }, limits: { cpu: "1", memory: "512Mi" } },
                 securityContext: { allowPrivilegeEscalation: false },
